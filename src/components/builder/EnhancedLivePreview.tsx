@@ -112,6 +112,61 @@ const EnhancedLivePreview: React.FC = () => {
 
     // Apply advanced effects to the base style
     const enhancedStyle = applyEffectsToStyle(selectedComponent, style || {})
+    
+    // Build CSS classes for animations and hover effects
+    let cssClasses = combinedClasses
+    
+    // Add hover effect classes
+    if (hoverEffects && hoverEffects.length > 0) {
+      hoverEffects.forEach(effectId => {
+        switch (effectId) {
+          case 'lift':
+            cssClasses += ' hover-lift'
+            break
+          case 'scale':
+            cssClasses += ' hover-scale'
+            break
+          case 'rotate':
+            cssClasses += ' hover-rotate'
+            break
+          case 'glow':
+            cssClasses += ' hover-glow'
+            break
+          case 'shake':
+            cssClasses += ' hover-shake'
+            break
+          case 'bounce':
+            cssClasses += ' hover-bounce'
+            break
+        }
+      })
+    }
+    
+    // Add animation classes
+    if (animations && animations.length > 0) {
+      animations.forEach(animId => {
+        switch (animId) {
+          case 'bounce':
+            cssClasses += ' animate-bounce-in'
+            break
+          case 'fade':
+            cssClasses += ' animate-fade-in-up'
+            break
+          case 'slide':
+            cssClasses += ' animate-slide-in-left'
+            break
+          case 'scale':
+            cssClasses += ' animate-scale-in'
+            break
+          case 'rotate':
+            cssClasses += ' animate-rotate-in'
+            break
+          case 'flip':
+            cssClasses += ' animate-flip-in'
+            break
+        }
+      })
+    }
 
     switch (type) {
       // Basic Components
@@ -119,11 +174,9 @@ const EnhancedLivePreview: React.FC = () => {
         const buttonText = properties?.text || selectedComponent.name || 'Button'
         return (
           <button 
-            className={combinedClasses}
+            className={cssClasses.trim()}
             style={{
               ...enhancedStyle,
-              minHeight: enhancedStyle.height || 'auto',
-              minWidth: enhancedStyle.width || 'auto',
               cursor: 'pointer'
             }}
           >
@@ -138,12 +191,10 @@ const EnhancedLivePreview: React.FC = () => {
 
         return (
           <div 
-            className={`${combinedClasses} overflow-hidden`}
+            className={cssClasses.trim()}
             style={{
               ...enhancedStyle,
-              width: enhancedStyle.width || '320px',
-              height: enhancedStyle.height || 'auto',
-              minHeight: enhancedStyle.height ? enhancedStyle.height : '200px',
+              overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column'
             }}
@@ -165,11 +216,12 @@ const EnhancedLivePreview: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center'
             }}>
-              <h3 className="font-semibold mb-2" style={{ 
+              <h3 style={{ 
                 color: enhancedStyle.color || '#374151',
                 fontSize: enhancedStyle.fontSize || '18px',
                 fontWeight: enhancedStyle.fontWeight || '600',
-                fontFamily: enhancedStyle.fontFamily || 'inherit'
+                fontFamily: enhancedStyle.fontFamily || 'inherit',
+                margin: '0 0 8px 0'
               }}>
                 {cardTitle}
               </h3>
@@ -177,7 +229,9 @@ const EnhancedLivePreview: React.FC = () => {
                 color: enhancedStyle.color || '#6b7280',
                 fontSize: `${parseInt(enhancedStyle.fontSize?.toString() || '14') * 0.85}px`,
                 opacity: 0.8,
-                fontFamily: enhancedStyle.fontFamily || 'inherit'
+                fontFamily: enhancedStyle.fontFamily || 'inherit',
+                margin: 0,
+                lineHeight: 1.5
               }}>
                 {cardDescription}
               </p>
@@ -205,14 +259,10 @@ const EnhancedLivePreview: React.FC = () => {
               placeholder={inputPlaceholder}
               value={properties?.text || ''}
               readOnly
-              className={combinedClasses}
+              className={cssClasses.trim()}
               style={{
                 ...enhancedStyle,
-                width: enhancedStyle.width || (properties?.fullWidth ? '300px' : '200px'),
-                height: enhancedStyle.height || 'auto',
-                fontSize: enhancedStyle.fontSize || '14px',
-                fontFamily: enhancedStyle.fontFamily || 'inherit',
-                fontWeight: enhancedStyle.fontWeight || '400'
+                cursor: 'text'
               }}
             />
           </div>
@@ -222,19 +272,10 @@ const EnhancedLivePreview: React.FC = () => {
         const badgeText = properties?.text || selectedComponent.name || 'Badge'
         return (
           <span 
-            className={combinedClasses}
+            className={cssClasses.trim()}
             style={{
               ...enhancedStyle,
               display: 'inline-block',
-              padding: enhancedStyle.padding || '4px 12px',
-              fontSize: enhancedStyle.fontSize || '12px',
-              fontWeight: enhancedStyle.fontWeight || '500',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              borderRadius: enhancedStyle.borderRadius || '12px',
-              backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
-              color: enhancedStyle.color || '#ffffff',
-              width: enhancedStyle.width || 'auto',
-              height: enhancedStyle.height || 'auto',
               textAlign: 'center' as const,
               lineHeight: enhancedStyle.height ? `${parseInt(enhancedStyle.height.toString().replace('px', '')) - 8}px` : 'normal'
             }}
@@ -252,20 +293,14 @@ const EnhancedLivePreview: React.FC = () => {
         
         return (
           <div 
-            className={combinedClasses}
+            className={cssClasses.trim()}
             style={{
               ...enhancedStyle,
-              width: enhancedStyle.width || `${size}px`,
-              height: enhancedStyle.height || `${size}px`,
               borderRadius: enhancedStyle.borderRadius === '50%' || !enhancedStyle.borderRadius ? '50%' : enhancedStyle.borderRadius,
-              backgroundColor: enhancedStyle.backgroundColor || '#e5e7eb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: enhancedStyle.fontSize || `${size * 0.4}px`,
-              fontWeight: enhancedStyle.fontWeight || '500',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              color: enhancedStyle.color || '#6b7280'
+              fontSize: enhancedStyle.fontSize || `${size * 0.4}px`
             }}
           >
             {avatarText}
@@ -276,23 +311,12 @@ const EnhancedLivePreview: React.FC = () => {
         const alertText = properties?.text || properties?.message || 'This is an alert message'
         return (
           <div 
-            className={combinedClasses}
+            className={cssClasses.trim()}
             style={{
               ...enhancedStyle,
-              padding: enhancedStyle.padding || '16px',
-              borderRadius: enhancedStyle.borderRadius || '8px',
-              backgroundColor: enhancedStyle.backgroundColor || '#fef3c7',
-              border: enhancedStyle.border || '1px solid #fbbf24',
-              color: enhancedStyle.color || '#92400e',
-              fontSize: enhancedStyle.fontSize || '14px',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              fontWeight: enhancedStyle.fontWeight || '400',
               display: 'flex',
               alignItems: 'center',
-              width: enhancedStyle.width || 'auto',
-              maxWidth: enhancedStyle.width || '400px',
-              height: enhancedStyle.height || 'auto',
-              minHeight: enhancedStyle.height || 'auto'
+              maxWidth: enhancedStyle.width || '400px'
             }}
           >
             <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -304,15 +328,16 @@ const EnhancedLivePreview: React.FC = () => {
 
       case 'progress':
         const progressValue = properties?.value || 65
+        const progressText = properties?.text || `${progressValue}% Complete`
         return (
-          <div className={combinedClasses} style={{ width: '300px' }}>
+          <div className={cssClasses.trim()} style={{ ...enhancedStyle, minWidth: '200px' }}>
             <div 
               style={{
-                height: '8px',
+                height: enhancedStyle.height || '8px',
                 backgroundColor: '#e5e7eb',
-                borderRadius: '4px',
+                borderRadius: enhancedStyle.borderRadius || '4px',
                 overflow: 'hidden',
-                ...enhancedStyle
+                marginBottom: '8px'
               }}
             >
               <div
@@ -321,12 +346,17 @@ const EnhancedLivePreview: React.FC = () => {
                   backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
                   width: `${progressValue}%`,
                   transition: 'width 0.3s ease',
-                  borderRadius: '4px'
+                  borderRadius: enhancedStyle.borderRadius || '4px'
                 }}
               />
             </div>
-            <div className="text-sm mt-2" style={{ color: enhancedStyle.color }}>
-              {progressValue}% Complete
+            <div style={{ 
+              color: enhancedStyle.color || '#374151',
+              fontSize: enhancedStyle.fontSize || '14px',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
+              fontWeight: enhancedStyle.fontWeight || '400'
+            }}>
+              {progressText}
             </div>
           </div>
         )
@@ -361,19 +391,13 @@ const EnhancedLivePreview: React.FC = () => {
 
       // Fallback for other components
       default:
+        const defaultText = properties?.text || selectedComponent.name || 'Component'
         return (
           <div 
-            className={combinedClasses}
-            style={{
-              ...enhancedStyle,
-              padding: '16px 24px',
-              borderRadius: '8px',
-              backgroundColor: enhancedStyle.backgroundColor || '#f3f4f6',
-              border: '1px solid #e5e7eb',
-              color: enhancedStyle.color || '#374151'
-            }}
+            className={cssClasses.trim()}
+            style={enhancedStyle}
           >
-            {selectedComponent.name} Component
+            {defaultText}
           </div>
         )
     }

@@ -1,16 +1,34 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { useComponentStore } from '../../stores/componentStore'
 
 const ImprovedCustomizationPanel: React.FC = () => {
   const { selectedComponent, updateComponentProperty, updateComponentStyle } = useComponentStore()
-  const [activeTab, setActiveTab] = useState<'properties' | 'text' | 'effects' | 'animations' | 'hover' | 'advanced'>('properties')
+  const [activeTab, setActiveTab] = useState<'properties' | 'text' | 'colors' | 'effects' | 'animations' | 'hover' | 'advanced'>('properties')
   const [localValues, setLocalValues] = useState<Record<string, any>>({})
+  
+  // Refs to prevent focus loss
+  const textInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
+
+  // Always call hooks at the top level - before any conditional logic
+  const updateStyle = useCallback((updates: Record<string, any>) => {
+    updateComponentStyle(updates)
+  }, [updateComponentStyle])
+
+  const updateProperty = useCallback((property: string, value: any) => {
+    updateComponentProperty(property, value)
+  }, [updateComponentProperty])
 
   // Update local values when component changes
   useEffect(() => {
     if (selectedComponent) {
-      setLocalValues({
+      const newValues = {
+        // Content properties
         text: selectedComponent.properties?.text || selectedComponent.name || '',
+        title: selectedComponent.properties?.title || selectedComponent.name || '',
+        description: selectedComponent.properties?.description || 'Description text',
+        placeholder: selectedComponent.properties?.placeholder || 'Placeholder text',
+        
+        // Style properties  
         width: parseInt(selectedComponent.style?.width?.toString().replace('px', '') || '200'),
         height: parseInt(selectedComponent.style?.height?.toString().replace('px', '') || '40'),
         padding: parseInt(selectedComponent.style?.padding?.toString().replace('px', '') || '12'),
@@ -23,9 +41,10 @@ const ImprovedCustomizationPanel: React.FC = () => {
         backgroundColor: selectedComponent.style?.backgroundColor || '#ffffff',
         display: selectedComponent.style?.display || 'block',
         opacity: Math.round((selectedComponent.style?.opacity || 1) * 100)
-      })
+      }
+      setLocalValues(newValues)
     }
-  }, [selectedComponent?.id])
+  }, [selectedComponent?.id, selectedComponent?.style, selectedComponent?.properties])
 
   if (!selectedComponent) {
     return (
@@ -47,21 +66,13 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
   const tabs = [
     { id: 'properties', label: 'Properties', icon: '📏', description: 'Size, shape, layout' },
-    { id: 'text', label: 'Text', icon: '📝', description: 'Font, content, style' },
-    { id: 'effects', label: 'Effects', icon: '✨', description: 'Glass, glow, shadows' },
-    { id: 'animations', label: 'Animations', icon: '🎬', description: 'Motion, transitions' },
+    { id: 'text', label: 'Text', icon: '📝', description: 'Content & typography' },
+    { id: 'colors', label: 'Colors', icon: '🎨', description: 'Colors & gradients' },
+    { id: 'effects', label: 'Effects', icon: '✨', description: 'Visual effects' },
+    { id: 'animations', label: 'Animations', icon: '🎬', description: 'Motion & transitions' },
     { id: 'hover', label: 'Hover', icon: '👆', description: 'Hover states' },
     { id: 'advanced', label: 'Advanced', icon: '🔧', description: 'Custom assets' }
   ]
-
-  // Debounced update functions
-  const updateStyle = useCallback((updates: Record<string, any>) => {
-    updateComponentStyle(updates)
-  }, [updateComponentStyle])
-
-  const updateProperty = useCallback((property: string, value: any) => {
-    updateComponentProperty(property, value)
-  }, [updateComponentProperty])
 
   const SliderControl = ({ 
     label, 
@@ -86,21 +97,22 @@ const ImprovedCustomizationPanel: React.FC = () => {
       setLocalValues(prev => ({ ...prev, [property]: newValue }))
       
       if (isStyle) {
-        updateStyle({ [property]: unit ? `${newValue}${unit}` : newValue })
+        const styleUpdate = unit ? `${newValue}${unit}` : newValue
+        updateStyle({ [property]: styleUpdate })
       } else {
         updateProperty(property, newValue)
       }
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex justify-between items-center">
           <label className="text-sm font-medium text-secondary-700">{label}</label>
-          <span className="text-sm text-secondary-500 bg-surface-200 px-2 py-1 rounded-lg">
+          <span className="text-sm text-primary-600 bg-primary-50 px-3 py-1 rounded-lg font-mono">
             {value}{unit}
           </span>
         </div>
-        <div className="relative">
+        <div className="relative px-1">
           <input
             type="range"
             min={min}
@@ -108,9 +120,12 @@ const ImprovedCustomizationPanel: React.FC = () => {
             step={step}
             value={value}
             onChange={(e) => handleChange(Number(e.target.value))}
-            className="w-full slider-neumorphism"
+            className="w-full h-2 bg-surface-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+            style={{
+              background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((value - min) / (max - min)) * 100}%, #e2e8f0 ${((value - min) / (max - min)) * 100}%, #e2e8f0 100%)`
+            }}
           />
-          <div className="flex justify-between text-xs text-secondary-400 mt-1">
+          <div className="flex justify-between text-xs text-secondary-400 mt-2">
             <span>{min}{unit}</span>
             <span>{max}{unit}</span>
           </div>
@@ -137,7 +152,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="text-sm font-medium text-secondary-700">{label}</label>
         <div className="flex items-center space-x-3">
           <div className="relative">
@@ -145,11 +160,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               type="color"
               value={value}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
-            />
-            <div 
-              className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
-              style={{ backgroundColor: value }}
+              className="w-14 h-14 rounded-xl cursor-pointer border-2 border-white shadow-lg"
             />
           </div>
           <div className="flex-1">
@@ -157,7 +168,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               type="text"
               value={value}
               onChange={(e) => handleChange(e.target.value)}
-              className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
+              className="w-full px-4 py-3 text-sm neumorphism-inset rounded-xl bg-surface-100 font-mono border-0 focus:ring-2 focus:ring-primary-200"
             />
           </div>
         </div>
@@ -178,14 +189,16 @@ const ImprovedCustomizationPanel: React.FC = () => {
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="text-sm font-medium text-secondary-700">{label}</label>
         <input
+          key={`${selectedComponent.id}-${property}`} // Force re-render to prevent focus issues
+          ref={(el) => textInputRefs.current[property] = el}
           type="text"
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100"
+          className="w-full px-4 py-3 text-sm neumorphism-inset rounded-xl bg-surface-100 border-0 focus:ring-2 focus:ring-primary-200"
         />
       </div>
     )
@@ -210,17 +223,17 @@ const ImprovedCustomizationPanel: React.FC = () => {
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         <label className="text-sm font-medium text-secondary-700">{label}</label>
         <div className="grid grid-cols-2 gap-2">
           {options.map(option => (
             <button
               key={option}
               onClick={() => handleChange(option)}
-              className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+              className={`px-4 py-3 text-sm rounded-xl transition-all duration-200 font-medium ${
                 value === option
-                  ? 'neumorphism-pressed text-primary-600 scale-95'
-                  : 'neumorphism-button text-secondary-600 hover:text-secondary-700'
+                  ? 'neumorphism-pressed text-primary-600 scale-95 bg-primary-50'
+                  : 'neumorphism-button text-secondary-600 hover:text-secondary-700 hover:scale-105'
               }`}
             >
               {option}
@@ -248,19 +261,19 @@ const ImprovedCustomizationPanel: React.FC = () => {
     }
 
     return (
-      <div className="flex items-center justify-between py-2">
+      <div className="flex items-center justify-between py-3">
         <div>
           <label className="text-sm font-medium text-secondary-700">{label}</label>
-          {description && <p className="text-xs text-secondary-500 mt-0.5">{description}</p>}
+          {description && <p className="text-xs text-secondary-500 mt-1">{description}</p>}
         </div>
         <button
           onClick={() => handleChange(!value)}
-          className={`relative w-12 h-6 rounded-full transition-all duration-200 ${
-            value ? 'neumorphism-pressed bg-primary-100' : 'neumorphism bg-surface-200'
+          className={`relative w-14 h-7 rounded-full transition-all duration-300 ${
+            value ? 'bg-primary-400 shadow-inner' : 'bg-surface-300 shadow-neumorphism'
           }`}
         >
-          <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all duration-200 absolute top-1 ${
-            value ? 'right-1' : 'left-1'
+          <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300 absolute top-1 ${
+            value ? 'right-1 bg-white' : 'left-1 bg-surface-100'
           }`} />
         </button>
       </div>
@@ -278,36 +291,38 @@ const ImprovedCustomizationPanel: React.FC = () => {
     const handleClick = () => {
       updateProperty('effect', effectId)
       
-      // Apply corresponding styles
+      // Apply enhanced CSS effects based on research
       switch (effectId) {
         case 'neumorphism':
           updateStyle({
-            boxShadow: '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
+            background: '#e6e7ee',
+            boxShadow: '9px 9px 16px #a3a3a3, -9px -9px 16px #ffffff',
             border: 'none',
-            background: selectedComponent.style?.backgroundColor || '#f0f4f8'
+            borderRadius: '20px'
           })
           break
         case 'glass':
           updateStyle({
-            background: 'rgba(255, 255, 255, 0.1)',
+            background: 'rgba(255, 255, 255, 0.25)',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
           })
           break
         case 'clay':
           updateStyle({
-            background: 'rgba(255, 255, 255, 0.25)',
-            backdropFilter: 'blur(4px)',
-            border: '2px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+            background: 'linear-gradient(315deg, #f39800 0%, #ff6b6b 74%)',
+            borderRadius: '50px',
+            border: 'none',
+            boxShadow: '20px 20px 40px #cc7700, -20px -20px 40px #ffbb00'
           })
           break
         case 'glow':
           updateStyle({
-            boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
-            background: selectedComponent.style?.backgroundColor || '#ffffff'
+            background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+            border: 'none',
+            borderRadius: '15px',
+            boxShadow: '0 0 40px rgba(102, 126, 234, 0.6), 0 0 80px rgba(118, 75, 162, 0.4)'
           })
           break
       }
@@ -316,18 +331,18 @@ const ImprovedCustomizationPanel: React.FC = () => {
     return (
       <button
         onClick={handleClick}
-        className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
+        className={`p-5 rounded-2xl text-left transition-all duration-300 space-y-4 ${
           active 
-            ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
-            : 'neumorphism-card hover:scale-105'
+            ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95 border-2 border-primary-200' 
+            : 'neumorphism-card hover:scale-105 hover:shadow-lg'
         }`}
       >
-        <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
+        <div className="h-16 flex items-center justify-center rounded-xl bg-surface-100 overflow-hidden">
           {preview}
         </div>
         <div>
-          <h4 className="font-medium text-sm">{name}</h4>
-          <p className="text-xs text-secondary-500 mt-1">{description}</p>
+          <h4 className="font-semibold text-sm mb-1">{name}</h4>
+          <p className="text-xs text-secondary-500">{description}</p>
         </div>
       </button>
     )
@@ -337,9 +352,9 @@ const ImprovedCustomizationPanel: React.FC = () => {
     <div className="h-full flex flex-col bg-gradient-to-br from-surface-50 to-surface-100">
       {/* Header */}
       <div className="p-6 border-b border-surface-200/50 bg-white/30 backdrop-blur-sm">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-12 h-12 neumorphism rounded-xl flex items-center justify-center">
-            <span className="text-2xl">🎨</span>
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="w-14 h-14 neumorphism rounded-2xl flex items-center justify-center">
+            <span className="text-3xl">🎨</span>
           </div>
           <div>
             <h2 className="text-xl font-bold text-secondary-800">{selectedComponent.name}</h2>
@@ -348,7 +363,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
         </div>
         
         {/* Tab Navigation */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           {tabs.map(tab => (
             <button
               key={tab.id}
@@ -361,7 +376,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
             >
               <div className="text-lg mb-1">{tab.icon}</div>
               <div className="text-xs font-semibold">{tab.label}</div>
-              <div className="text-[10px] text-secondary-500 mt-0.5">{tab.description}</div>
+              <div className="text-[10px] text-secondary-500 mt-0.5 leading-tight">{tab.description}</div>
             </button>
           ))}
         </div>
@@ -371,13 +386,13 @@ const ImprovedCustomizationPanel: React.FC = () => {
       <div className="flex-1 p-6 overflow-y-auto">
         {/* Properties Tab */}
         {activeTab === 'properties' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-8">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 📏 <span className="ml-2">Dimensions & Layout</span>
               </h3>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-6">
                 <SliderControl
                   label="Width"
                   property="width"
@@ -392,9 +407,6 @@ const ImprovedCustomizationPanel: React.FC = () => {
                   max={400}
                   unit="px"
                 />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <SliderControl
                   label="Padding"
                   property="padding"
@@ -412,7 +424,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🎯 <span className="ml-2">Position & Spacing</span>
               </h3>
@@ -444,20 +456,38 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
         {/* Text Tab */}
         {activeTab === 'text' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-8">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 📝 <span className="ml-2">Content</span>
               </h3>
               
               <TextInputControl
-                label="Text Content"
+                label="Main Text"
                 property="text"
-                placeholder="Enter your text..."
+                placeholder="Enter main text..."
+              />
+              
+              <TextInputControl
+                label="Title"
+                property="title"
+                placeholder="Enter title..."
+              />
+              
+              <TextInputControl
+                label="Description"
+                property="description"
+                placeholder="Enter description..."
+              />
+              
+              <TextInputControl
+                label="Placeholder"
+                property="placeholder"
+                placeholder="Enter placeholder text..."
               />
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🔤 <span className="ml-2">Typography</span>
               </h3>
@@ -490,76 +520,146 @@ const ImprovedCustomizationPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Effects Tab */}
-        {activeTab === 'effects' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
+        {/* Colors Tab */}
+        {activeTab === 'colors' && (
+          <div className="space-y-8">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
-                ✨ <span className="ml-2">Visual Effects</span>
-              </h3>
-
-              <div className="grid grid-cols-2 gap-3">
-                <EffectCard
-                  name="Neumorphism"
-                  description="Soft 3D effect"
-                  effectId="neumorphism"
-                  preview={<div className="w-8 h-6 bg-surface-100 rounded" style={{ boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff' }} />}
-                />
-
-                <EffectCard
-                  name="Glass"
-                  description="Transparent blur"
-                  effectId="glass"
-                  preview={<div className="w-8 h-6 bg-white/20 rounded border border-white/30" style={{ backdropFilter: 'blur(2px)' }} />}
-                />
-
-                <EffectCard
-                  name="Claymorphism"
-                  description="Clay-like texture"
-                  effectId="clay"
-                  preview={<div className="w-8 h-6 bg-white/25 rounded-lg border-2 border-white/20" />}
-                />
-
-                <EffectCard
-                  name="Glow"
-                  description="Soft light emission"
-                  effectId="glow"
-                  preview={<div className="w-8 h-6 bg-blue-100 rounded" style={{ boxShadow: '0 0 8px rgba(59, 130, 246, 0.5)' }} />}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
-                🎨 <span className="ml-2">Colors & Gradients</span>
+                🎨 <span className="ml-2">Primary Colors</span>
               </h3>
               
               <ColorControl
                 label="Background Color"
                 property="backgroundColor"
               />
+              
+              <ColorControl
+                label="Text Color"
+                property="color"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-secondary-700">Gradient Presets</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { name: 'Purple', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-                    { name: 'Sunset', gradient: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)' },
-                    { name: 'Ocean', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-                    { name: 'Forest', gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
-                    { name: 'Fire', gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
-                    { name: 'Ice', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' }
-                  ].map(preset => (
-                    <button
-                      key={preset.name}
-                      onClick={() => updateStyle({ background: preset.gradient })}
-                      className="h-10 rounded-lg neumorphism-button text-xs font-medium overflow-hidden"
-                      style={{ background: preset.gradient }}
-                    >
-                      <span className="text-white drop-shadow-md">{preset.name}</span>
-                    </button>
-                  ))}
-                </div>
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
+                🌈 <span className="ml-2">Gradient Backgrounds</span>
+              </h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { name: 'Sunset', gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
+                  { name: 'Ocean', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+                  { name: 'Forest', gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' },
+                  { name: 'Purple', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+                  { name: 'Fire', gradient: 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)' },
+                  { name: 'Ice', gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)' },
+                  { name: 'Gold', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+                  { name: 'Mint', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }
+                ].map(preset => (
+                  <button
+                    key={preset.name}
+                    onClick={() => updateStyle({ background: preset.gradient })}
+                    className="h-16 rounded-xl text-sm font-semibold text-white shadow-lg hover:scale-105 transition-transform duration-200"
+                    style={{ background: preset.gradient }}
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
+                🎪 <span className="ml-2">Color Palettes</span>
+              </h3>
+              
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  '#ef4444', '#f97316', '#f59e0b', '#eab308',
+                  '#84cc16', '#22c55e', '#10b981', '#06b6d4',
+                  '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6',
+                  '#a855f7', '#d946ef', '#ec4899', '#f43f5e'
+                ].map(color => (
+                  <button
+                    key={color}
+                    onClick={() => updateStyle({ backgroundColor: color })}
+                    className="w-full h-12 rounded-lg hover:scale-110 transition-transform duration-200 shadow-md"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Effects Tab */}
+        {activeTab === 'effects' && (
+          <div className="space-y-8">
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
+                ✨ <span className="ml-2">Visual Effects</span>
+              </h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <EffectCard
+                  name="Neumorphism"
+                  description="Soft 3D depth effect"
+                  effectId="neumorphism"
+                  preview={
+                    <div 
+                      className="w-12 h-8 rounded-2xl" 
+                      style={{ 
+                        background: '#e6e7ee',
+                        boxShadow: '6px 6px 10px #a3a3a3, -6px -6px 10px #ffffff' 
+                      }} 
+                    />
+                  }
+                />
+
+                <EffectCard
+                  name="Glassmorphism"
+                  description="Transparent blur effect"
+                  effectId="glass"
+                  preview={
+                    <div 
+                      className="w-12 h-8 rounded-xl border border-white/20" 
+                      style={{ 
+                        background: 'rgba(255, 255, 255, 0.25)',
+                        backdropFilter: 'blur(4px)',
+                        boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)'
+                      }} 
+                    />
+                  }
+                />
+
+                <EffectCard
+                  name="Claymorphism"
+                  description="Clay-like texture"
+                  effectId="clay"
+                  preview={
+                    <div 
+                      className="w-12 h-8 rounded-3xl" 
+                      style={{ 
+                        background: 'linear-gradient(315deg, #f39800 0%, #ff6b6b 74%)',
+                        boxShadow: '10px 10px 20px #cc7700, -10px -10px 20px #ffbb00'
+                      }} 
+                    />
+                  }
+                />
+
+                <EffectCard
+                  name="Glow Effect"
+                  description="Soft light emission"
+                  effectId="glow"
+                  preview={
+                    <div 
+                      className="w-12 h-8 rounded-xl" 
+                      style={{ 
+                        background: 'linear-gradient(45deg, #667eea 0%, #764ba2 100%)',
+                        boxShadow: '0 0 20px rgba(102, 126, 234, 0.6)'
+                      }} 
+                    />
+                  }
+                />
               </div>
             </div>
           </div>
@@ -567,13 +667,13 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
         {/* Animations Tab */}
         {activeTab === 'animations' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-8">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🎬 <span className="ml-2">Entry Animations</span>
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   { id: 'bounce', name: 'Bounce In', description: 'Bouncy entrance' },
                   { id: 'fade', name: 'Fade In', description: 'Smooth fade' },
@@ -595,24 +695,25 @@ const ImprovedCustomizationPanel: React.FC = () => {
                           updateProperty('animations', [...currentAnimations, animation.id])
                         }
                       }}
-                      className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
+                      className={`p-5 rounded-2xl text-left transition-all duration-200 space-y-4 ${
                         isActive 
-                          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
+                          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95 border-2 border-primary-200' 
                           : 'neumorphism-card hover:scale-105'
                       }`}
                     >
-                      <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
-                        <div className={`w-6 h-4 bg-primary-400 rounded ${
+                      <div className="h-16 flex items-center justify-center rounded-xl bg-surface-100 overflow-hidden">
+                        <div className={`w-8 h-6 bg-primary-400 rounded-lg ${
                           animation.id === 'bounce' ? 'animate-bounce' :
                           animation.id === 'fade' ? 'animate-pulse' :
                           animation.id === 'slide' ? 'animate-pulse' :
                           animation.id === 'scale' ? 'animate-ping' :
-                          'animate-spin'
+                          animation.id === 'rotate' ? 'animate-spin' :
+                          'animate-pulse'
                         }`} />
                       </div>
                       <div>
-                        <h4 className="font-medium text-sm">{animation.name}</h4>
-                        <p className="text-xs text-secondary-500 mt-1">{animation.description}</p>
+                        <h4 className="font-semibold text-sm mb-1">{animation.name}</h4>
+                        <p className="text-xs text-secondary-500">{animation.description}</p>
                       </div>
                     </button>
                   )
@@ -620,12 +721,12 @@ const ImprovedCustomizationPanel: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🔄 <span className="ml-2">Continuous Animations</span>
               </h3>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <ToggleControl
                   label="Pulse Effect"
                   property="pulse"
@@ -650,13 +751,13 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
         {/* Hover Tab */}
         {activeTab === 'hover' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-8">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 👆 <span className="ml-2">Hover Effects</span>
               </h3>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   { id: 'lift', name: 'Lift Up', description: 'Elevate on hover' },
                   { id: 'scale', name: 'Scale', description: 'Grow larger' },
@@ -678,18 +779,18 @@ const ImprovedCustomizationPanel: React.FC = () => {
                           updateProperty('hoverEffects', [...currentEffects, effect.id])
                         }
                       }}
-                      className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
+                      className={`p-5 rounded-2xl text-left transition-all duration-200 space-y-4 hover:scale-105 ${
                         isActive 
-                          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
-                          : 'neumorphism-card hover:scale-105'
+                          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95 border-2 border-primary-200' 
+                          : 'neumorphism-card'
                       }`}
                     >
-                      <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
-                        <div className="w-6 h-4 bg-accent-400 rounded hover:scale-110 transition-transform" />
+                      <div className="h-16 flex items-center justify-center rounded-xl bg-surface-100 overflow-hidden">
+                        <div className="w-8 h-6 bg-accent-400 rounded-lg hover:scale-110 transition-transform" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-sm">{effect.name}</h4>
-                        <p className="text-xs text-secondary-500 mt-1">{effect.description}</p>
+                        <h4 className="font-semibold text-sm mb-1">{effect.name}</h4>
+                        <p className="text-xs text-secondary-500">{effect.description}</p>
                       </div>
                     </button>
                   )
@@ -697,32 +798,26 @@ const ImprovedCustomizationPanel: React.FC = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🎨 <span className="ml-2">Hover Colors</span>
               </h3>
 
-              <div className="space-y-3">
-                <div className="space-y-2">
+              <div className="space-y-6">
+                <div className="space-y-3">
                   <label className="text-sm font-medium text-secondary-700">Hover Background</label>
                   <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff'}
-                        onChange={(e) => updateStyle({ 
-                          hover: { 
-                            ...selectedComponent.style?.hover, 
-                            backgroundColor: e.target.value 
-                          }
-                        })}
-                        className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
-                      />
-                      <div 
-                        className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
-                        style={{ backgroundColor: selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff' }}
-                      />
-                    </div>
+                    <input
+                      type="color"
+                      value={selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff'}
+                      onChange={(e) => updateStyle({ 
+                        hover: { 
+                          ...selectedComponent.style?.hover, 
+                          backgroundColor: e.target.value 
+                        }
+                      })}
+                      className="w-14 h-14 rounded-xl cursor-pointer border-2 border-white shadow-lg"
+                    />
                     <input
                       type="text"
                       value={selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff'}
@@ -732,31 +827,25 @@ const ImprovedCustomizationPanel: React.FC = () => {
                           backgroundColor: e.target.value 
                         }
                       })}
-                      className="flex-1 px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
+                      className="flex-1 px-4 py-3 text-sm neumorphism-inset rounded-xl bg-surface-100 font-mono border-0 focus:ring-2 focus:ring-primary-200"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <label className="text-sm font-medium text-secondary-700">Hover Text Color</label>
                   <div className="flex items-center space-x-3">
-                    <div className="relative">
-                      <input
-                        type="color"
-                        value={selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151'}
-                        onChange={(e) => updateStyle({ 
-                          hover: { 
-                            ...selectedComponent.style?.hover, 
-                            color: e.target.value 
-                          }
-                        })}
-                        className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
-                      />
-                      <div 
-                        className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
-                        style={{ backgroundColor: selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151' }}
-                      />
-                    </div>
+                    <input
+                      type="color"
+                      value={selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151'}
+                      onChange={(e) => updateStyle({ 
+                        hover: { 
+                          ...selectedComponent.style?.hover, 
+                          color: e.target.value 
+                        }
+                      })}
+                      className="w-14 h-14 rounded-xl cursor-pointer border-2 border-white shadow-lg"
+                    />
                     <input
                       type="text"
                       value={selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151'}
@@ -766,7 +855,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
                           color: e.target.value 
                         }
                       })}
-                      className="flex-1 px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
+                      className="flex-1 px-4 py-3 text-sm neumorphism-inset rounded-xl bg-surface-100 font-mono border-0 focus:ring-2 focus:ring-primary-200"
                     />
                   </div>
                 </div>
@@ -777,8 +866,8 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
         {/* Advanced Tab */}
         {activeTab === 'advanced' && (
-          <div className="space-y-6">
-            <div className="space-y-4">
+          <div className="space-y-8">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🔧 <span className="ml-2">Custom Assets</span>
               </h3>
@@ -802,7 +891,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               />
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-lg font-semibold text-secondary-800 flex items-center">
                 🎯 <span className="ml-2">Advanced Styling</span>
               </h3>
@@ -813,14 +902,14 @@ const ImprovedCustomizationPanel: React.FC = () => {
                 placeholder="my-custom-class"
               />
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-sm font-medium text-secondary-700">Custom CSS</label>
                 <textarea
                   value={selectedComponent.properties?.customCSS || ''}
                   onChange={(e) => updateProperty('customCSS', e.target.value)}
                   placeholder="/* Custom CSS rules */"
-                  className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono resize-none"
-                  rows={6}
+                  className="w-full px-4 py-3 text-sm neumorphism-inset rounded-xl bg-surface-100 font-mono resize-none border-0 focus:ring-2 focus:ring-primary-200"
+                  rows={8}
                 />
               </div>
 
