@@ -139,10 +139,10 @@ const LivePreview: React.FC = () => {
       case 'divider':
         return <div style={{
           width: '200px',
-          height: `${style.borderWidth || 1}px`,
-          backgroundColor: style.accentColor,
-          margin: `${style.margin}px`,
-          borderRadius: `${style.borderRadius}px`,
+          height: `${parseInt(style.borderWidth || '1')}px`,
+          backgroundColor: style.backgroundColor || '#e5e7eb',
+          margin: style.margin || '8px',
+          borderRadius: style.borderRadius || '0px',
         }} />
       
       // Form Components
@@ -164,11 +164,11 @@ const LivePreview: React.FC = () => {
             type="range" 
             style={{
               width: '200px',
-              height: `${style.fontSize * 0.5}px`,
-              backgroundColor: style.backgroundColor,
-              borderRadius: `${style.borderRadius}px`,
-              margin: `${style.margin}px`,
-              accentColor: style.accentColor,
+              height: `${parseInt(style.fontSize || '14') * 0.5}px`,
+              backgroundColor: style.backgroundColor || '#ffffff',
+              borderRadius: style.borderRadius || '8px',
+              margin: style.margin || '8px',
+              accentColor: style.backgroundColor || '#3b82f6',
             }}
           />
         )
@@ -183,36 +183,39 @@ const LivePreview: React.FC = () => {
       case 'sidebar':
         return (
           <div style={{
-            backgroundColor: style.backgroundColor,
-            color: style.textColor,
-            padding: `${style.padding}px`,
-            borderRadius: `${style.borderRadius}px`,
-            margin: `${style.margin}px`,
-            width: '200px',
+            width: '250px',
+            backgroundColor: style.backgroundColor || '#ffffff',
+            padding: style.padding || '16px',
+            borderRight: style.border || '1px solid #e5e7eb',
             height: '300px',
-            boxShadow: style.shadows ? '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff' : 'none',
-            border: style.borderWidth > 0 ? `${style.borderWidth}px ${style.borderStyle} ${style.accentColor}` : 'none',
+            overflowY: 'auto'
           }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: `${style.fontSize * 1.1}px` }}>Sidebar</h3>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: `${parseInt(style.fontSize || '14') * 1.1}px` }}>Sidebar</h3>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              <li style={{ padding: '8px 0', borderBottom: `1px solid ${style.accentColor}20` }}>Menu Item 1</li>
-              <li style={{ padding: '8px 0', borderBottom: `1px solid ${style.accentColor}20` }}>Menu Item 2</li>
-              <li style={{ padding: '8px 0', borderBottom: `1px solid ${style.accentColor}20` }}>Menu Item 3</li>
+              <li style={{ padding: '8px 0', borderBottom: `1px solid ${style.backgroundColor || '#e5e7eb'}20` }}>Menu Item 1</li>
+              <li style={{ padding: '8px 0', borderBottom: `1px solid ${style.backgroundColor || '#e5e7eb'}20` }}>Menu Item 2</li>
+              <li style={{ padding: '8px 0', borderBottom: `1px solid ${style.backgroundColor || '#e5e7eb'}20` }}>Menu Item 3</li>
             </ul>
           </div>
         )
       case 'breadcrumb':
         return (
           <nav style={{
-            color: style.textColor,
-            fontSize: `${style.fontSize}px`,
-            margin: `${style.margin}px`,
+            backgroundColor: style.backgroundColor || '#ffffff',
+            padding: style.padding || '12px',
+            borderRadius: style.borderRadius || '8px',
+            border: style.border || '1px solid #e5e7eb',
+            margin: style.margin || '8px',
+            fontSize: style.fontSize || '14px',
+            color: style.color || '#374151'
           }}>
-            <span>Home</span>
-            <span style={{ margin: '0 8px', color: style.accentColor }}>/</span>
-            <span>Category</span>
-            <span style={{ margin: '0 8px', color: style.accentColor }}>/</span>
-            <span style={{ color: style.accentColor }}>Current Page</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <span style={{ color: style.color || '#374151' }}>Home</span>
+              <span style={{ margin: '0 8px', color: style.backgroundColor || '#3b82f6' }}>/</span>
+              <span style={{ color: style.color || '#374151' }}>Section</span>
+              <span style={{ margin: '0 8px', color: style.backgroundColor || '#3b82f6' }}>/</span>
+              <span style={{ color: style.backgroundColor || '#3b82f6' }}>Current Page</span>
+            </div>
           </nav>
         )
       case 'tabs':
@@ -307,22 +310,22 @@ const LivePreview: React.FC = () => {
         return (
           <div style={{
             display: 'flex',
-            gap: `${style.margin}px`,
-            margin: `${style.margin}px`,
+            gap: style.margin || '8px',
+            margin: style.margin || '8px',
           }}>
             {['←', '1', '2', '3', '→'].map((item, index) => (
               <button
                 key={index}
                 style={{
-                  backgroundColor: index === 2 ? style.accentColor : style.backgroundColor,
-                  color: index === 2 ? 'white' : style.textColor,
-                  padding: `${style.padding * 0.5}px ${style.padding * 0.8}px`,
-                  borderRadius: `${style.borderRadius}px`,
-                  border: style.borderWidth > 0 ? `${style.borderWidth}px ${style.borderStyle} ${style.accentColor}` : 'none',
-                  fontSize: `${style.fontSize}px`,
+                  backgroundColor: index === 2 ? style.backgroundColor || '#3b82f6' : style.backgroundColor || '#ffffff',
+                  color: index === 2 ? 'white' : style.color || '#374151',
+                  padding: `${parseInt(style.padding || '12') * 0.5}px ${parseInt(style.padding || '12') * 0.8}px`,
+                  borderRadius: style.borderRadius || '8px',
+                  border: style.border || 'none',
+                  fontSize: style.fontSize || '14px',
                   cursor: 'pointer',
-                  boxShadow: style.shadows ? '4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff' : 'none',
-                  transition: style.transitions ? 'all 0.2s ease' : 'none',
+                  boxShadow: style.boxShadow || 'none',
+                  transition: style.transition || 'all 0.2s ease',
                 }}
               >
                 {item}

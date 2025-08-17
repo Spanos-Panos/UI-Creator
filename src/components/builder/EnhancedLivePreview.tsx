@@ -1,379 +1,148 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useComponentStore } from '../../stores/componentStore'
-import { 
-  Button, Card, Input, Badge, Avatar, Modal, Textarea, Select, 
-  Checkbox, Radio, Switch, Alert, Progress, Spinner, Navbar, Table, Tooltip 
-} from '../ui'
 
 const EnhancedLivePreview: React.FC = () => {
   const { selectedComponent, resetComponent } = useComponentStore()
   const [isFullscreen, setIsFullscreen] = React.useState(false)
 
-  function getAnimationClasses(component: any): string {
-    if (!component?.animations?.length) return ''
-    return component.animations.map((animId: string) => {
-      const animationMap: Record<string, string> = {
-        bounce: 'animate-bounce-in',
-        fade: 'animate-fade-in-up',
-        slide: 'animate-slide-in-left',
-        scale: 'animate-scale-in',
-        rotate: 'animate-spin',
-        flip: 'animate-flip-in' // custom class we'll emulate with rotate
-      }
-      return animationMap[animId] || ''
-    }).filter(Boolean).join(' ')
-  }
+  // Optimize callback functions
+  const handleFullscreenToggle = useCallback(() => {
+    setIsFullscreen(prev => !prev)
+  }, [])
 
-  function getHoverEffectClasses(component: any): string {
-    if (!component?.hoverEffects?.length) return ''
-    return component.hoverEffects.map((effectId: string) => {
-      // Map effect IDs to CSS classes
-      const effectMap: Record<string, string> = {
-        lift: 'hover-lift',
-        liftCard: 'hover-lift-card',
-        scale: 'hover-scale',
-        scaleSubtle: 'hover-scale-subtle',
-        rotate: 'hover-rotate',
-        glow: 'hover-glow',
-        borderGlow: 'hover-border-glow',
-        neon: 'hover-neon',
-        tilt: 'hover-tilt',
-        parallax: 'hover-parallax',
-        ripple: 'hover-ripple'
-      }
-      return effectMap[effectId] || ''
-    }).filter(Boolean).join(' ')
-  }
+  const handleFullscreenClose = useCallback(() => {
+    setIsFullscreen(false)
+  }, [])
 
-  function applyEffectsToStyle(component: any, baseStyle: React.CSSProperties): React.CSSProperties {
-    if (!component?.properties) return baseStyle
-
-    const properties = component.properties
-    const enhancedStyle: React.CSSProperties = { ...baseStyle }
-
-    // Apply effect presets
-    if (properties.effect) {
-      switch (properties.effect) {
-        case 'neumorphism':
-          enhancedStyle.boxShadow = '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff'
-          enhancedStyle.border = 'none'
-          break
-        case 'glass':
-          enhancedStyle.background = 'rgba(255, 255, 255, 0.1)'
-          enhancedStyle.backdropFilter = 'blur(10px)'
-          enhancedStyle.border = '1px solid rgba(255, 255, 255, 0.2)'
-          break
-        case 'clay':
-          enhancedStyle.background = 'rgba(255, 255, 255, 0.25)'
-          enhancedStyle.backdropFilter = 'blur(4px)'
-          enhancedStyle.border = '2px solid rgba(255, 255, 255, 0.18)'
-          break
-        case 'glow':
-          enhancedStyle.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)'
-          enhancedStyle.border = '1px solid rgba(59, 130, 246, 0.3)'
-          break
-      }
-    }
-
-    // Apply custom background image
-    if (properties.backgroundImage && properties.backgroundImage !== '') {
-      enhancedStyle.backgroundImage = `url(${properties.backgroundImage})`
-      enhancedStyle.backgroundSize = enhancedStyle.backgroundSize || 'cover'
-      enhancedStyle.backgroundPosition = 'center'
-    }
-
-    // Apply continuous animations
-    if (properties.pulse) {
-      enhancedStyle.animation = `${enhancedStyle.animation || ''} pulse 2s infinite`.trim()
-    }
-    
-    if (properties.float) {
-      enhancedStyle.animation = `${enhancedStyle.animation || ''} float 3s infinite ease-in-out`.trim()
-    }
-
-    if (properties.glowPulse) {
-      enhancedStyle.animation = `${enhancedStyle.animation || ''} glowPulse 2s infinite`.trim()
-    }
-
-    return enhancedStyle
-  }
-
-  function renderComponent() {
+  const renderComponent = React.useMemo(() => {
     if (!selectedComponent) return null
 
-    const { type, style, properties, animations, hoverEffects } = selectedComponent
-    const animationClasses = getAnimationClasses(selectedComponent)
-    const hoverClasses = getHoverEffectClasses(selectedComponent)
-    const combinedClasses = `${animationClasses} ${hoverClasses}`.trim()
+    const { type, properties } = selectedComponent
 
-    // Apply advanced effects to the base style
-    const enhancedStyle = applyEffectsToStyle(selectedComponent, style || {})
+    // Basic styling for preview
+    const baseStyle: React.CSSProperties = {
+      padding: '12px 16px',
+      backgroundColor: '#ffffff',
+      borderRadius: '8px',
+      border: '1px solid #e5e7eb',
+      fontSize: '14px',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      color: '#374151',
+      transition: 'all 0.2s ease'
+    }
 
     switch (type) {
-      // Basic Components
       case 'button':
-        const buttonText = properties?.text || selectedComponent.name || 'Button'
         return (
           <button 
-            className={combinedClasses}
             style={{
-              ...enhancedStyle,
-              minHeight: enhancedStyle.height || 'auto',
-              minWidth: enhancedStyle.width || 'auto',
-              cursor: 'pointer'
+              ...baseStyle,
+              backgroundColor: '#3b82f6',
+              color: '#ffffff',
+              cursor: 'pointer',
+              border: 'none'
             }}
           >
-            {buttonText}
+            {properties.text || 'Button'}
           </button>
         )
-
+      
       case 'card':
-        const cardTitle = properties?.title || properties?.text || selectedComponent.name || 'Card Title'
-        const cardDescription = properties?.description || 'This is a sample card description that shows how your card will look.'
-        const cardImage = properties?.image || properties?.backgroundImage
-
         return (
           <div 
-            className={`${combinedClasses} overflow-hidden`}
             style={{
-              ...enhancedStyle,
-              width: enhancedStyle.width || '320px',
-              height: enhancedStyle.height || 'auto',
-              minHeight: enhancedStyle.height ? enhancedStyle.height : '200px',
-              display: 'flex',
-              flexDirection: 'column'
+              ...baseStyle,
+              minWidth: '300px',
+              minHeight: '200px',
+              padding: '24px'
             }}
           >
-            {cardImage && (
-              <img 
-                src={cardImage} 
-                alt="Card" 
-                className="w-full h-32 object-cover flex-shrink-0"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none'
-                }}
-              />
-            )}
-            <div style={{ 
-              padding: enhancedStyle.padding || '24px',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center'
-            }}>
-              <h3 className="font-semibold mb-2" style={{ 
-                color: enhancedStyle.color || '#374151',
-                fontSize: enhancedStyle.fontSize || '18px',
-                fontWeight: enhancedStyle.fontWeight || '600',
-                fontFamily: enhancedStyle.fontFamily || 'inherit'
-              }}>
-                {cardTitle}
-              </h3>
-              <p style={{ 
-                color: enhancedStyle.color || '#6b7280',
-                fontSize: `${parseInt(enhancedStyle.fontSize?.toString() || '14') * 0.85}px`,
-                opacity: 0.8,
-                fontFamily: enhancedStyle.fontFamily || 'inherit'
-              }}>
-                {cardDescription}
-              </p>
-            </div>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '600' }}>
+              {properties.title || 'Card Title'}
+            </h3>
+            <p style={{ margin: '0', opacity: 0.8, lineHeight: 1.5 }}>
+              {properties.description || 'This is a sample card with customizable content and styling.'}
+            </p>
           </div>
         )
 
       case 'input':
-        const inputPlaceholder = properties?.placeholder || properties?.text || 'Enter text...'
-        const inputLabel = properties?.label
-        
         return (
-          <div className="space-y-2">
-            {inputLabel && (
-              <label className="block text-sm font-medium" style={{ 
-                color: enhancedStyle.color,
-                fontSize: enhancedStyle.fontSize,
-                fontFamily: enhancedStyle.fontFamily
-              }}>
-                {inputLabel}
-              </label>
-            )}
-            <input
-              type={properties?.type || 'text'}
-              placeholder={inputPlaceholder}
-              value={properties?.text || ''}
-              readOnly
-              className={combinedClasses}
-              style={{
-                ...enhancedStyle,
-                width: enhancedStyle.width || (properties?.fullWidth ? '300px' : '200px'),
-                height: enhancedStyle.height || 'auto',
-                fontSize: enhancedStyle.fontSize || '14px',
-                fontFamily: enhancedStyle.fontFamily || 'inherit',
-                fontWeight: enhancedStyle.fontWeight || '400'
-              }}
-            />
-          </div>
+          <input
+            type="text"
+            placeholder={properties.placeholder || 'Enter text...'}
+            style={{
+              ...baseStyle,
+              minWidth: '200px',
+              outline: 'none'
+            }}
+          />
         )
 
       case 'badge':
-        const badgeText = properties?.text || selectedComponent.name || 'Badge'
         return (
-          <span 
-            className={combinedClasses}
+          <span
             style={{
-              ...enhancedStyle,
-              display: 'inline-block',
-              padding: enhancedStyle.padding || '4px 12px',
-              fontSize: enhancedStyle.fontSize || '12px',
-              fontWeight: enhancedStyle.fontWeight || '500',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              borderRadius: enhancedStyle.borderRadius || '12px',
-              backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
-              color: enhancedStyle.color || '#ffffff',
-              width: enhancedStyle.width || 'auto',
-              height: enhancedStyle.height || 'auto',
-              textAlign: 'center' as const,
-              lineHeight: enhancedStyle.height ? `${parseInt(enhancedStyle.height.toString().replace('px', '')) - 8}px` : 'normal'
+              ...baseStyle,
+              backgroundColor: '#10b981',
+              color: '#ffffff',
+              padding: '4px 8px',
+              fontSize: '12px',
+              fontWeight: '500',
+              borderRadius: '12px',
+              display: 'inline-block'
             }}
           >
-            {badgeText}
+            {properties.text || 'Badge'}
           </span>
         )
 
       case 'avatar':
-        const avatarText = properties?.text || properties?.initials || selectedComponent.name?.charAt(0) || '👤'
-        const size = Math.min(
-          parseInt(enhancedStyle.width?.toString().replace('px', '') || '64'),
-          parseInt(enhancedStyle.height?.toString().replace('px', '') || '64')
-        )
-        
         return (
-          <div 
-            className={combinedClasses}
+          <div
             style={{
-              ...enhancedStyle,
-              width: enhancedStyle.width || `${size}px`,
-              height: enhancedStyle.height || `${size}px`,
-              borderRadius: enhancedStyle.borderRadius === '50%' || !enhancedStyle.borderRadius ? '50%' : enhancedStyle.borderRadius,
-              backgroundColor: enhancedStyle.backgroundColor || '#e5e7eb',
+              width: '48px',
+              height: '48px',
+              backgroundColor: '#6b7280',
+              borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: enhancedStyle.fontSize || `${size * 0.4}px`,
-              fontWeight: enhancedStyle.fontWeight || '500',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              color: enhancedStyle.color || '#6b7280'
+              color: '#ffffff',
+              fontSize: '18px',
+              fontWeight: '600'
             }}
           >
-            {avatarText}
+            {properties.initials || 'U'}
           </div>
         )
 
       case 'alert':
-        const alertText = properties?.text || properties?.message || 'This is an alert message'
         return (
-          <div 
-            className={combinedClasses}
+          <div
             style={{
-              ...enhancedStyle,
-              padding: enhancedStyle.padding || '16px',
-              borderRadius: enhancedStyle.borderRadius || '8px',
-              backgroundColor: enhancedStyle.backgroundColor || '#fef3c7',
-              border: enhancedStyle.border || '1px solid #fbbf24',
-              color: enhancedStyle.color || '#92400e',
-              fontSize: enhancedStyle.fontSize || '14px',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              fontWeight: enhancedStyle.fontWeight || '400',
-              display: 'flex',
-              alignItems: 'center',
-              width: enhancedStyle.width || 'auto',
-              maxWidth: enhancedStyle.width || '400px',
-              height: enhancedStyle.height || 'auto',
-              minHeight: enhancedStyle.height || 'auto'
+              ...baseStyle,
+              backgroundColor: '#fef3c7',
+              borderColor: '#f59e0b',
+              color: '#92400e',
+              minWidth: '300px'
             }}
           >
-            <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            <span>{alertText}</span>
+            <strong>Alert: </strong>
+            {properties.message || 'This is an alert message'}
           </div>
         )
 
-      case 'progress':
-        const progressValue = properties?.value || 65
-        return (
-          <div className={combinedClasses} style={{ width: '300px' }}>
-            <div 
-              style={{
-                height: '8px',
-                backgroundColor: '#e5e7eb',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                ...enhancedStyle
-              }}
-            >
-              <div
-                style={{
-                  height: '100%',
-                  backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
-                  width: `${progressValue}%`,
-                  transition: 'width 0.3s ease',
-                  borderRadius: '4px'
-                }}
-              />
-            </div>
-            <div className="text-sm mt-2" style={{ color: enhancedStyle.color }}>
-              {progressValue}% Complete
-            </div>
-          </div>
-        )
-
-      case 'table':
-        return (
-          <div className={combinedClasses} style={{ ...enhancedStyle, maxWidth: '500px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ backgroundColor: enhancedStyle.backgroundColor || '#f3f4f6' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Name</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Role</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { name: 'John Doe', role: 'Developer', status: 'Active' },
-                  { name: 'Jane Smith', role: 'Designer', status: 'Active' },
-                  { name: 'Bob Johnson', role: 'Manager', status: 'Inactive' }
-                ].map((row, index) => (
-                  <tr key={index} style={{ backgroundColor: index % 2 === 0 ? 'transparent' : '#f9fafb' }}>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb' }}>{row.name}</td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb' }}>{row.role}</td>
-                    <td style={{ padding: '12px', borderBottom: '1px solid #e5e7eb' }}>{row.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
-
-      // Fallback for other components
       default:
         return (
-          <div 
-            className={combinedClasses}
-            style={{
-              ...enhancedStyle,
-              padding: '16px 24px',
-              borderRadius: '8px',
-              backgroundColor: enhancedStyle.backgroundColor || '#f3f4f6',
-              border: '1px solid #e5e7eb',
-              color: enhancedStyle.color || '#374151'
-            }}
-          >
-            {selectedComponent.name} Component
+          <div style={baseStyle}>
+            <strong>{type}</strong> component
+            <br />
+            <small>Preview coming soon</small>
           </div>
         )
     }
-  }
+  }, [selectedComponent])
 
   return (
     <div className="h-full flex flex-col">
@@ -385,91 +154,61 @@ const EnhancedLivePreview: React.FC = () => {
               Live Preview
             </h2>
             <p className="text-secondary-600">
-              See your component in real-time with advanced animations and effects
+              {selectedComponent ? `Previewing: ${selectedComponent.name}` : 'Select a component to preview'}
             </p>
           </div>
           
           {/* Preview Controls */}
           <div className="flex items-center space-x-2">
-            <button 
-              className="neumorphism-button text-sm px-3 py-2 flex items-center space-x-2"
-              onClick={resetComponent}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
-              </svg>
-              <span>Reset</span>
-            </button>
-            <button 
-              className="neumorphism-button-secondary text-sm px-3 py-2 flex items-center space-x-2"
-              onClick={() => setIsFullscreen(!isFullscreen)}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      {/* Preview Area */}
-      <div className="flex-1 p-6">
-        <div className="neumorphism h-full flex items-center justify-center relative overflow-hidden">
-          {/* Background Grid Pattern */}
-          <div className="absolute inset-0 opacity-5">
-            <div className="absolute inset-0" style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, rgba(0,0,0,0.15) 1px, transparent 0)`,
-              backgroundSize: '20px 20px'
-            }}></div>
-          </div>
-          
-          {/* Subtle Background Accents */}
-          <div className="absolute inset-0 opacity-3">
-            <div className="absolute top-8 left-8 w-32 h-32 bg-gradient-to-br from-primary-200 to-primary-300 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-8 right-8 w-24 h-24 bg-gradient-to-br from-accent-200 to-accent-300 rounded-full blur-2xl"></div>
-          </div>
-          
-          {/* Content */}
-          <div className="flex items-center justify-center relative z-10 h-full">
-            {selectedComponent ? (
-              <div className="flex items-center justify-center p-8">
-                {renderComponent()}
-              </div>
-            ) : (
-              <div className="text-center text-secondary-400">
-                <div className="neumorphism-inset w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-8 h-8 text-secondary-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+            {selectedComponent && (
+              <>
+                <button
+                  onClick={handleFullscreenToggle}
+                  className="neumorphism-button text-sm px-3 py-2 flex items-center space-x-1"
+                  title="Fullscreen Preview"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 01-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 01-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 011.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 011.414-1.414L15 13.586V12a1 1 0 011-1z" clipRule="evenodd" />
                   </svg>
-                </div>
-                
-                <h3 className="text-xl font-semibold mb-2 text-secondary-700">Select a Component</h3>
-                <p className="text-secondary-500 max-w-sm mb-6">
-                  Choose from the component library to see it rendered here with live animations and effects
-                </p>
-                
-                {/* Enhanced Sample Preview */}
-                <div className="flex justify-center items-center space-x-6 mb-6">
-                  <div className="neumorphism-button-secondary text-sm px-4 py-2 hover-lift transition-all duration-300">
-                    ✨ Enhanced
-                  </div>
-                  <div className="neumorphism w-16 h-12 flex items-center justify-center hover-glow">
-                    <div className="w-8 h-2 bg-gradient-to-r from-primary-400 to-accent-400 rounded-full animate-pulse-continuous"></div>
-                  </div>
-                  <div className="neumorphism-inset w-12 h-8 flex items-center justify-center hover-scale">
-                    <div className="w-2 h-2 bg-primary-400 rounded-full animate-glow-pulse"></div>
-                  </div>
-                </div>
-                
-                <div className="text-xs text-secondary-400">
-                  Components now include advanced animations, hover effects, and styling options
-                </div>
-              </div>
+                  <span>Fullscreen</span>
+                </button>
+                <button
+                  onClick={resetComponent}
+                  className="neumorphism-button text-sm px-3 py-2 flex items-center space-x-1"
+                  title="Clear Selection"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span>Clear</span>
+                </button>
+              </>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Preview Area */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        {selectedComponent ? (
+          <div className="neumorphism-card bg-white/50 backdrop-blur-sm p-8 rounded-3xl min-w-0">
+            <div className="flex items-center justify-center">
+              {renderComponent}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center max-w-md">
+            <div className="w-24 h-24 mx-auto mb-6 neumorphism-inset rounded-3xl flex items-center justify-center">
+              <svg className="w-12 h-12 text-secondary-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm3 2h2v2H7V4zm8 0h-2v2h2V4zM7 8h2v2H7V8zm8 0h-2v2h2V8zm-8 4h2v2H7v-2zm8 0h-2v2h2v-2z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-secondary-700 mb-3">No Component Selected</h3>
+            <p className="text-secondary-500 text-lg leading-relaxed">
+              Choose a component from the library to see a live preview here
+            </p>
+          </div>
+        )}
       </div>
       
       {/* Fullscreen Modal */}
@@ -477,7 +216,7 @@ const EnhancedLivePreview: React.FC = () => {
         <div className="fixed inset-0 bg-surface-100 z-50 flex items-center justify-center">
           <button
             className="absolute top-4 right-4 neumorphism-button text-sm px-4 py-2 flex items-center space-x-2"
-            onClick={() => setIsFullscreen(false)}
+            onClick={handleFullscreenClose}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -485,7 +224,7 @@ const EnhancedLivePreview: React.FC = () => {
             <span>Close</span>
           </button>
           <div className="scale-150 transform">
-            {renderComponent()}
+            {renderComponent}
           </div>
         </div>
       )}
@@ -493,4 +232,4 @@ const EnhancedLivePreview: React.FC = () => {
   )
 }
 
-export default EnhancedLivePreview
+export default React.memo(EnhancedLivePreview)

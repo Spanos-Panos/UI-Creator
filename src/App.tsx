@@ -1,33 +1,71 @@
 import React, { useState } from 'react'
 import ComponentSelectorModal from './components/builder/ComponentSelectorModal'
 import EnhancedLivePreview from './components/builder/EnhancedLivePreview'
-import ImprovedCustomizationPanel from './components/builder/ImprovedCustomizationPanel'
 import ExportModal from './components/builder/ExportModal'
+import { ErrorBoundary } from './components/common'
 import { useComponentStore } from './stores/componentStore'
+import { downloadFile } from './utils/exportUtils'
 
 function App() {
   const [showExportModal, setShowExportModal] = useState(false)
   const [showComponentSelector, setShowComponentSelector] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const { selectedComponent } = useComponentStore()
 
-  const handleSave = () => {
-    if (selectedComponent) {
+  const handleSave = async () => {
+    if (!selectedComponent) return
+    
+    setSaveLoading(true)
+    setSaveError(null)
+    
+    try {
       const componentData = JSON.stringify(selectedComponent, null, 2)
-      const blob = new Blob([componentData], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `${selectedComponent.name.toLowerCase()}-config.json`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(url)
+      const filename = `${selectedComponent.name.toLowerCase().replace(/\s+/g, '-')}-config.json`
+      
+      const success = await downloadFile(componentData, filename, 'application/json')
+      
+      if (!success) {
+        setSaveError('Failed to save component configuration')
+      }
+    } catch (error) {
+      console.error('Save error:', error)
+      setSaveError('An unexpected error occurred while saving')
+    } finally {
+      setSaveLoading(false)
     }
   }
+
+  const handleErrorBoundary = (error: Error, errorInfo: React.ErrorInfo) => {
+    // Log to external service in production
+    console.error('App Error Boundary:', error, errorInfo)
+  }
   return (
-    <div className="h-screen bg-gradient-to-br from-surface-100 via-surface-50 to-surface-200 flex flex-col overflow-hidden">
-      {/* Top Header - Clean and Organized */}
-      <div className="bg-gradient-to-br from-surface-50 to-surface-100 shadow-neumorphism border-b border-surface-200/50 flex-shrink-0">
+    <ErrorBoundary onError={handleErrorBoundary}>
+      <div className="h-screen bg-gradient-to-br from-surface-100 via-surface-50 to-surface-200 flex flex-col overflow-hidden">
+        {/* Error Display for Save Operations */}
+        {saveError && (
+          <div className="bg-red-50 border-b border-red-200 px-6 py-2 flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm text-red-700">{saveError}</span>
+            </div>
+            <button
+              onClick={() => setSaveError(null)}
+              className="text-red-500 hover:text-red-700"
+              aria-label="Dismiss error"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        )}
+        
+        {/* Top Header - Clean and Organized */}
+        <div className="bg-gradient-to-br from-surface-50 to-surface-100 shadow-neumorphism border-b border-surface-200/50 flex-shrink-0">
         {/* Title and Controls Row */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-surface-200/30">
           {/* Left: App Title */}
@@ -71,48 +109,54 @@ function App() {
               <span>Export</span>
             </button>
             <button 
-              className={`flex items-center space-x-2 text-sm px-4 py-2 ${
-                selectedComponent 
+              className={`flex items-center space-x-2 text-sm px-4 py-2 transition-all duration-200 ${
+                selectedComponent && !saveLoading
                   ? 'neumorphism-button-primary' 
                   : 'neumorphism-button-primary opacity-50 cursor-not-allowed'
               }`}
               onClick={handleSave}
-              disabled={!selectedComponent}
+              disabled={!selectedComponent || saveLoading}
+              aria-label={saveLoading ? 'Saving component configuration...' : 'Save component configuration'}
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
-              </svg>
-              <span>Save</span>
+              {saveLoading ? (
+                <svg className="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 12a8 8 0 018-8v8z"/>
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293zM9 4a1 1 0 012 0v2H9V4z" />
+                </svg>
+              )}
+              <span>{saveLoading ? 'Saving...' : 'Save'}</span>
             </button>
           </div>
         </div>
       </div>
       
-      {/* Main Content Area */}
-      <div className="flex-1 flex min-h-0">
-        {/* Left: Improved Customization Panel */}
-        <div className="w-96 border-r border-surface-200/50 bg-gradient-to-br from-surface-50 to-surface-100">
-          <ImprovedCustomizationPanel />
+        {/* Main Content Area - Full Width Preview */}
+        <div className="flex-1 bg-gradient-to-br from-surface-50 to-surface-100">
+          <ErrorBoundary>
+            <EnhancedLivePreview />
+          </ErrorBoundary>
         </div>
         
-        {/* Right: Enhanced Live Preview */}
-        <div className="flex-1 bg-gradient-to-br from-surface-50 to-surface-100">
-          <EnhancedLivePreview />
-        </div>
+        {/* Export Modal */}
+        <ErrorBoundary>
+          <ExportModal 
+            isOpen={showExportModal} 
+            onClose={() => setShowExportModal(false)} 
+          />
+        </ErrorBoundary>
+        
+        {/* Component Selector Modal */}
+        <ErrorBoundary>
+          <ComponentSelectorModal 
+            isOpen={showComponentSelector} 
+            onClose={() => setShowComponentSelector(false)} 
+          />
+        </ErrorBoundary>
       </div>
-      
-      {/* Export Modal */}
-      <ExportModal 
-        isOpen={showExportModal} 
-        onClose={() => setShowExportModal(false)} 
-      />
-      
-      {/* Component Selector Modal */}
-      <ComponentSelectorModal 
-        isOpen={showComponentSelector} 
-        onClose={() => setShowComponentSelector(false)} 
-      />
-    </div>
+    </ErrorBoundary>
   )
 }
 

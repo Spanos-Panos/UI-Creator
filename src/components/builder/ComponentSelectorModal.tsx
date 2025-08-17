@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useComponentStore } from '../../stores/componentStore'
-import { getAllComponentConfigs } from '../../config/componentConfigs'
+import { COMPONENTS, getAllCategories } from '../../config/componentConfigs'
 
 interface ComponentSelectorModalProps {
   isOpen: boolean
@@ -8,49 +8,16 @@ interface ComponentSelectorModalProps {
 }
 
 const ComponentSelectorModal: React.FC<ComponentSelectorModalProps> = ({ isOpen, onClose }) => {
-  const { setSelectedComponent, selectedComponent, createComponentFromType } = useComponentStore()
+  const { setSelectedComponent, createComponent, selectedComponent } = useComponentStore()
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
 
   if (!isOpen) return null
 
-  const componentConfigs = getAllComponentConfigs()
-  
-  // Add some additional components that don't have full configs yet
-  const additionalComponents = [
-    { id: 'badge', name: 'Badge', category: 'Basic', description: 'Small label or status indicator' },
-    { id: 'avatar', name: 'Avatar', category: 'Basic', description: 'User profile picture or initials' },
-    { id: 'tooltip', name: 'Tooltip', category: 'Basic', description: 'Hover information popup' },
-    { id: 'textarea', name: 'Textarea', category: 'Form', description: 'Multi-line text input' },
-    { id: 'select', name: 'Select', category: 'Form', description: 'Dropdown selection' },
-    { id: 'checkbox', name: 'Checkbox', category: 'Form', description: 'Multiple selection option' },
-    { id: 'radio', name: 'Radio', category: 'Form', description: 'Single selection from group' },
-    { id: 'switch', name: 'Switch', category: 'Form', description: 'Toggle on/off control' },
-    { id: 'modal', name: 'Modal', category: 'Layout', description: 'Dialog overlay' },
-    { id: 'navbar', name: 'Navbar', category: 'Layout', description: 'Navigation bar' },
-    { id: 'alert', name: 'Alert', category: 'Feedback', description: 'Important message notification' },
-    { id: 'progress', name: 'Progress', category: 'Feedback', description: 'Progress indicator' },
-    { id: 'table', name: 'Table', category: 'Data', description: 'Data table with rows and columns' }
-  ]
-
-  // Convert configs to component format
-  const configuredComponents = componentConfigs.map(config => ({
-    id: config.id,
-    name: config.name,
-    category: config.category,
-    description: config.description,
-    hasAdvancedConfig: true,
-    icon: getComponentIcon(config.id)
+  // Get all available components
+  const allComponents = COMPONENTS.map(comp => ({
+    ...comp,
+    icon: getComponentIcon(comp.id)
   }))
-
-  // Combine all components
-  const allComponents = [
-    ...configuredComponents,
-    ...additionalComponents.map(comp => ({
-      ...comp,
-      hasAdvancedConfig: false,
-      icon: getComponentIcon(comp.id)
-    }))
-  ]
 
   function getComponentIcon(componentId: string) {
     const icons: Record<string, JSX.Element> = {
@@ -193,30 +160,9 @@ const ComponentSelectorModal: React.FC<ComponentSelectorModalProps> = ({ isOpen,
     : allComponents.filter(comp => comp.category === selectedCategory)
 
   const handleComponentSelect = (component: any) => {
-    if (component.hasAdvancedConfig) {
-      // Use new configuration system
-      const newComponent = createComponentFromType(component.id)
-      if (newComponent) {
-        setSelectedComponent(newComponent)
-      }
-    } else {
-      // Fallback for components without advanced configs
-      setSelectedComponent({
-        id: component.id,
-        name: component.name,
-        type: component.id,
-        style: {
-          padding: '12px 16px',
-          backgroundColor: '#ffffff',
-          borderRadius: '8px',
-          border: '1px solid #e5e7eb',
-          transition: 'all 0.2s ease'
-        },
-        properties: { text: component.name },
-        animations: [],
-        hoverEffects: []
-      })
-    }
+    // Create a new component using the simplified structure
+    const newComponent = createComponent(component.id, component.name)
+    setSelectedComponent(newComponent)
     onClose()
   }
 
@@ -296,11 +242,7 @@ const ComponentSelectorModal: React.FC<ComponentSelectorModalProps> = ({ isOpen,
                       }`}>
                         {component.category}
                       </span>
-                      {component.hasAdvancedConfig && (
-                        <span className="text-xs bg-accent-100 text-accent-600 px-1.5 py-0.5 rounded-full">
-                          ✨
-                        </span>
-                      )}
+
                     </div>
                   </div>
                 </div>

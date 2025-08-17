@@ -1,5 +1,5 @@
 import React from 'react'
-import { useComponentStore, defaultStyle } from '../../stores/componentStore'
+import { useComponentStore } from '../../stores/componentStore'
 
 const ComponentLibrary: React.FC = () => {
   const { setSelectedComponent, selectedComponent } = useComponentStore()
@@ -412,12 +412,9 @@ const ComponentLibrary: React.FC = () => {
   )
 
   function handleComponentSelect(component: any) {
-    setSelectedComponent({
-      id: component.id,
-      name: component.name,
-      type: component.id,
-      style: { ...defaultStyle }
-    })
+    const { createComponent } = useComponentStore.getState()
+    const newComponent = createComponent(component.id, component.name)
+    setSelectedComponent(newComponent)
   }
 }
 

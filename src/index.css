@@ -17,6 +17,19 @@
 }
 
 @layer components {
+  /* Screen reader only content */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* Enhanced Neumorphic Elements */
   .neumorphism {
     @apply bg-gradient-to-br from-surface-50 to-surface-100 shadow-neumorphism rounded-2xl border border-surface-200/50;
@@ -61,28 +74,7 @@
     @apply bg-gradient-to-br from-surface-100 to-surface-50 shadow-neumorphism-inset rounded-xl px-4 py-3 text-secondary-700 transition-all duration-200 border border-surface-300/30 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
   
-  /* Enhanced Range Slider */
-  .neumorphism-range {
-    @apply w-full h-3 bg-gradient-to-r from-surface-200 to-surface-300 rounded-lg appearance-none cursor-pointer shadow-neumorphism-inset border border-surface-300/30;
-  }
-  
-  .neumorphism-range::-webkit-slider-thumb {
-    @apply appearance-none w-6 h-6 bg-gradient-to-br from-surface-50 to-surface-100 rounded-full shadow-neumorphism cursor-pointer border border-surface-200/50;
-  }
-  
-  .neumorphism-range::-moz-range-thumb {
-    @apply w-6 h-6 bg-gradient-to-br from-surface-50 to-surface-100 rounded-full shadow-neumorphism cursor-pointer border border-surface-200/50 border-none;
-  }
-  
-  /* Enhanced Checkbox */
-  .neumorphism-checkbox {
-    @apply w-5 h-5 bg-gradient-to-br from-surface-100 to-surface-50 shadow-neumorphism-inset rounded-lg border border-surface-300/30 text-primary-600 focus:ring-2 focus:ring-primary-500/20 transition-all duration-200;
-  }
-  
-  /* Enhanced Color Picker */
-  .neumorphism-color-picker {
-    @apply w-full h-12 rounded-lg cursor-pointer border-2 border-white shadow-neumorphism-inset transition-all duration-200 hover:scale-105 hover:shadow-neumorphism;
-  }
+  /* UI Elements - Ready for future expansion */
   
   /* Enhanced Section Headers */
   .neumorphism-section {
