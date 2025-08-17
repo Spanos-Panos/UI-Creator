@@ -1,9 +1,31 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { useComponentStore } from '../../stores/componentStore'
 
 const ImprovedCustomizationPanel: React.FC = () => {
   const { selectedComponent, updateComponentProperty, updateComponentStyle } = useComponentStore()
   const [activeTab, setActiveTab] = useState<'properties' | 'text' | 'effects' | 'animations' | 'hover' | 'advanced'>('properties')
+  const [localValues, setLocalValues] = useState<Record<string, any>>({})
+
+  // Update local values when component changes
+  useEffect(() => {
+    if (selectedComponent) {
+      setLocalValues({
+        text: selectedComponent.properties?.text || selectedComponent.name || '',
+        width: parseInt(selectedComponent.style?.width?.toString().replace('px', '') || '200'),
+        height: parseInt(selectedComponent.style?.height?.toString().replace('px', '') || '40'),
+        padding: parseInt(selectedComponent.style?.padding?.toString().replace('px', '') || '12'),
+        borderRadius: parseInt(selectedComponent.style?.borderRadius?.toString().replace('px', '') || '8'),
+        margin: parseInt(selectedComponent.style?.margin?.toString().replace('px', '') || '8'),
+        fontSize: parseInt(selectedComponent.style?.fontSize?.toString().replace('px', '') || '14'),
+        fontWeight: selectedComponent.style?.fontWeight || '400',
+        fontFamily: selectedComponent.style?.fontFamily || 'Inter',
+        color: selectedComponent.style?.color || '#374151',
+        backgroundColor: selectedComponent.style?.backgroundColor || '#ffffff',
+        display: selectedComponent.style?.display || 'block',
+        opacity: Math.round((selectedComponent.style?.opacity || 1) * 100)
+      })
+    }
+  }, [selectedComponent?.id])
 
   if (!selectedComponent) {
     return (
@@ -32,165 +54,284 @@ const ImprovedCustomizationPanel: React.FC = () => {
     { id: 'advanced', label: 'Advanced', icon: '🔧', description: 'Custom assets' }
   ]
 
-  const SliderControl = ({ label, value, onChange, min = 0, max = 100, step = 1, unit = '', color = 'primary' }: {
+  // Debounced update functions
+  const updateStyle = useCallback((updates: Record<string, any>) => {
+    updateComponentStyle(updates)
+  }, [updateComponentStyle])
+
+  const updateProperty = useCallback((property: string, value: any) => {
+    updateComponentProperty(property, value)
+  }, [updateComponentProperty])
+
+  const SliderControl = ({ 
+    label, 
+    property, 
+    min = 0, 
+    max = 100, 
+    step = 1, 
+    unit = '', 
+    isStyle = true 
+  }: {
     label: string
-    value: number
-    onChange: (value: number) => void
+    property: string
     min?: number
     max?: number
     step?: number
     unit?: string
-    color?: string
-  }) => (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <label className="text-sm font-medium text-secondary-700">{label}</label>
-        <span className="text-sm text-secondary-500 bg-surface-200 px-2 py-1 rounded-lg">
-          {value}{unit}
-        </span>
-      </div>
-      <div className="relative">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full slider-neumorphism"
-        />
-        <div className="flex justify-between text-xs text-secondary-400 mt-1">
-          <span>{min}{unit}</span>
-          <span>{max}{unit}</span>
-        </div>
-      </div>
-    </div>
-  )
+    isStyle?: boolean
+  }) => {
+    const value = localValues[property] || 0
+    
+    const handleChange = (newValue: number) => {
+      setLocalValues(prev => ({ ...prev, [property]: newValue }))
+      
+      if (isStyle) {
+        updateStyle({ [property]: unit ? `${newValue}${unit}` : newValue })
+      } else {
+        updateProperty(property, newValue)
+      }
+    }
 
-  const ColorControl = ({ label, value, onChange }: {
-    label: string
-    value: string
-    onChange: (value: string) => void
-  }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-secondary-700">{label}</label>
-      <div className="flex items-center space-x-3">
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <label className="text-sm font-medium text-secondary-700">{label}</label>
+          <span className="text-sm text-secondary-500 bg-surface-200 px-2 py-1 rounded-lg">
+            {value}{unit}
+          </span>
+        </div>
         <div className="relative">
           <input
-            type="color"
+            type="range"
+            min={min}
+            max={max}
+            step={step}
             value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
+            onChange={(e) => handleChange(Number(e.target.value))}
+            className="w-full slider-neumorphism"
           />
-          <div 
-            className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
-            style={{ backgroundColor: value }}
-          />
-        </div>
-        <div className="flex-1">
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
-          />
+          <div className="flex justify-between text-xs text-secondary-400 mt-1">
+            <span>{min}{unit}</span>
+            <span>{max}{unit}</span>
+          </div>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
-  const ToggleControl = ({ label, value, onChange, description }: {
+  const ColorControl = ({ label, property, isStyle = true }: {
     label: string
-    value: boolean
-    onChange: (value: boolean) => void
-    description?: string
-  }) => (
-    <div className="flex items-center justify-between py-2">
-      <div>
+    property: string
+    isStyle?: boolean
+  }) => {
+    const value = localValues[property] || '#ffffff'
+    
+    const handleChange = (newValue: string) => {
+      setLocalValues(prev => ({ ...prev, [property]: newValue }))
+      
+      if (isStyle) {
+        updateStyle({ [property]: newValue })
+      } else {
+        updateProperty(property, newValue)
+      }
+    }
+
+    return (
+      <div className="space-y-2">
         <label className="text-sm font-medium text-secondary-700">{label}</label>
-        {description && <p className="text-xs text-secondary-500 mt-0.5">{description}</p>}
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <input
+              type="color"
+              value={value}
+              onChange={(e) => handleChange(e.target.value)}
+              className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
+            />
+            <div 
+              className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
+              style={{ backgroundColor: value }}
+            />
+          </div>
+          <div className="flex-1">
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => handleChange(e.target.value)}
+              className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
+            />
+          </div>
+        </div>
       </div>
-      <button
-        onClick={() => onChange(!value)}
-        className={`relative w-12 h-6 rounded-full transition-all duration-200 ${
-          value ? 'neumorphism-pressed bg-primary-100' : 'neumorphism bg-surface-200'
-        }`}
-      >
-        <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all duration-200 absolute top-1 ${
-          value ? 'right-1' : 'left-1'
-        }`} />
-      </button>
-    </div>
-  )
+    )
+  }
 
-  const SelectControl = ({ label, value, onChange, options }: {
+  const TextInputControl = ({ label, property, placeholder }: {
     label: string
-    value: string
-    onChange: (value: string) => void
-    options: string[]
-  }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-secondary-700">{label}</label>
-      <div className="grid grid-cols-2 gap-2">
-        {options.map(option => (
-          <button
-            key={option}
-            onClick={() => onChange(option)}
-            className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
-              value === option
-                ? 'neumorphism-pressed text-primary-600 scale-95'
-                : 'neumorphism-button text-secondary-600 hover:text-secondary-700'
-            }`}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-
-  const TextInputControl = ({ label, value, onChange, placeholder }: {
-    label: string
-    value: string
-    onChange: (value: string) => void
+    property: string
     placeholder?: string
-  }) => (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-secondary-700">{label}</label>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100"
-      />
-    </div>
-  )
+  }) => {
+    const value = localValues[property] || ''
+    
+    const handleChange = (newValue: string) => {
+      setLocalValues(prev => ({ ...prev, [property]: newValue }))
+      updateProperty(property, newValue)
+    }
 
-  const EffectCard = ({ name, description, active, onClick, preview }: {
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-secondary-700">{label}</label>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100"
+        />
+      </div>
+    )
+  }
+
+  const SelectControl = ({ label, property, options, isStyle = true }: {
+    label: string
+    property: string
+    options: string[]
+    isStyle?: boolean
+  }) => {
+    const value = localValues[property] || options[0]
+    
+    const handleChange = (newValue: string) => {
+      setLocalValues(prev => ({ ...prev, [property]: newValue }))
+      
+      if (isStyle) {
+        updateStyle({ [property]: newValue })
+      } else {
+        updateProperty(property, newValue)
+      }
+    }
+
+    return (
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-secondary-700">{label}</label>
+        <div className="grid grid-cols-2 gap-2">
+          {options.map(option => (
+            <button
+              key={option}
+              onClick={() => handleChange(option)}
+              className={`px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                value === option
+                  ? 'neumorphism-pressed text-primary-600 scale-95'
+                  : 'neumorphism-button text-secondary-600 hover:text-secondary-700'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const ToggleControl = ({ label, property, description, isStyle = false }: {
+    label: string
+    property: string
+    description?: string
+    isStyle?: boolean
+  }) => {
+    const value = selectedComponent.properties?.[property] || false
+    
+    const handleChange = (newValue: boolean) => {
+      if (isStyle) {
+        updateStyle({ [property]: newValue })
+      } else {
+        updateProperty(property, newValue)
+      }
+    }
+
+    return (
+      <div className="flex items-center justify-between py-2">
+        <div>
+          <label className="text-sm font-medium text-secondary-700">{label}</label>
+          {description && <p className="text-xs text-secondary-500 mt-0.5">{description}</p>}
+        </div>
+        <button
+          onClick={() => handleChange(!value)}
+          className={`relative w-12 h-6 rounded-full transition-all duration-200 ${
+            value ? 'neumorphism-pressed bg-primary-100' : 'neumorphism bg-surface-200'
+          }`}
+        >
+          <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-all duration-200 absolute top-1 ${
+            value ? 'right-1' : 'left-1'
+          }`} />
+        </button>
+      </div>
+    )
+  }
+
+  const EffectCard = ({ name, description, effectId, preview }: {
     name: string
     description: string
-    active: boolean
-    onClick: () => void
+    effectId: string
     preview: React.ReactNode
-  }) => (
-    <button
-      onClick={onClick}
-      className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
-        active 
-          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
-          : 'neumorphism-card hover:scale-105'
-      }`}
-    >
-      <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
-        {preview}
-      </div>
-      <div>
-        <h4 className="font-medium text-sm">{name}</h4>
-        <p className="text-xs text-secondary-500 mt-1">{description}</p>
-      </div>
-    </button>
-  )
+  }) => {
+    const active = selectedComponent.properties?.effect === effectId
+    
+    const handleClick = () => {
+      updateProperty('effect', effectId)
+      
+      // Apply corresponding styles
+      switch (effectId) {
+        case 'neumorphism':
+          updateStyle({
+            boxShadow: '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
+            border: 'none',
+            background: selectedComponent.style?.backgroundColor || '#f0f4f8'
+          })
+          break
+        case 'glass':
+          updateStyle({
+            background: 'rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+          })
+          break
+        case 'clay':
+          updateStyle({
+            background: 'rgba(255, 255, 255, 0.25)',
+            backdropFilter: 'blur(4px)',
+            border: '2px solid rgba(255, 255, 255, 0.18)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+          })
+          break
+        case 'glow':
+          updateStyle({
+            boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            background: selectedComponent.style?.backgroundColor || '#ffffff'
+          })
+          break
+      }
+    }
+
+    return (
+      <button
+        onClick={handleClick}
+        className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
+          active 
+            ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
+            : 'neumorphism-card hover:scale-105'
+        }`}
+      >
+        <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
+          {preview}
+        </div>
+        <div>
+          <h4 className="font-medium text-sm">{name}</h4>
+          <p className="text-xs text-secondary-500 mt-1">{description}</p>
+        </div>
+      </button>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-surface-50 to-surface-100">
@@ -239,18 +380,16 @@ const ImprovedCustomizationPanel: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <SliderControl
                   label="Width"
-                  value={parseInt(selectedComponent.style?.width?.toString() || '200')}
-                  onChange={(value) => updateComponentStyle({ width: `${value}px` })}
+                  property="width"
                   min={50}
-                  max={500}
+                  max={800}
                   unit="px"
                 />
                 <SliderControl
                   label="Height"
-                  value={parseInt(selectedComponent.style?.height?.toString() || '40')}
-                  onChange={(value) => updateComponentStyle({ height: `${value}px` })}
+                  property="height"
                   min={20}
-                  max={300}
+                  max={400}
                   unit="px"
                 />
               </div>
@@ -258,16 +397,14 @@ const ImprovedCustomizationPanel: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <SliderControl
                   label="Padding"
-                  value={parseInt(selectedComponent.style?.padding?.toString() || '12')}
-                  onChange={(value) => updateComponentStyle({ padding: `${value}px` })}
+                  property="padding"
                   min={0}
                   max={50}
                   unit="px"
                 />
                 <SliderControl
                   label="Border Radius"
-                  value={parseInt(selectedComponent.style?.borderRadius?.toString() || '8')}
-                  onChange={(value) => updateComponentStyle({ borderRadius: `${value}px` })}
+                  property="borderRadius"
                   min={0}
                   max={50}
                   unit="px"
@@ -282,8 +419,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               
               <SliderControl
                 label="Margin"
-                value={parseInt(selectedComponent.style?.margin?.toString() || '8')}
-                onChange={(value) => updateComponentStyle({ margin: `${value}px` })}
+                property="margin"
                 min={0}
                 max={50}
                 unit="px"
@@ -291,9 +427,16 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
               <SelectControl
                 label="Display"
-                value={selectedComponent.style?.display || 'block'}
-                onChange={(value) => updateComponentStyle({ display: value })}
+                property="display"
                 options={['block', 'inline-block', 'flex', 'inline-flex']}
+              />
+
+              <SliderControl
+                label="Opacity"
+                property="opacity"
+                min={0}
+                max={100}
+                unit="%"
               />
             </div>
           </div>
@@ -309,8 +452,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               
               <TextInputControl
                 label="Text Content"
-                value={selectedComponent.properties?.text || selectedComponent.name}
-                onChange={(value) => updateComponentProperty('text', value)}
+                property="text"
                 placeholder="Enter your text..."
               />
             </div>
@@ -322,8 +464,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               
               <SliderControl
                 label="Font Size"
-                value={parseInt(selectedComponent.style?.fontSize?.toString() || '14')}
-                onChange={(value) => updateComponentStyle({ fontSize: `${value}px` })}
+                property="fontSize"
                 min={8}
                 max={48}
                 unit="px"
@@ -331,22 +472,19 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
               <SelectControl
                 label="Font Weight"
-                value={selectedComponent.style?.fontWeight || '400'}
-                onChange={(value) => updateComponentStyle({ fontWeight: value })}
+                property="fontWeight"
                 options={['300', '400', '500', '600', '700', '800']}
               />
 
               <SelectControl
                 label="Font Family"
-                value={selectedComponent.style?.fontFamily || 'Inter'}
-                onChange={(value) => updateComponentStyle({ fontFamily: value })}
+                property="fontFamily"
                 options={['Inter', 'Roboto', 'Arial', 'Georgia', 'Monospace']}
               />
 
               <ColorControl
                 label="Text Color"
-                value={selectedComponent.style?.color || '#374151'}
-                onChange={(value) => updateComponentStyle({ color: value })}
+                property="color"
               />
             </div>
           </div>
@@ -364,58 +502,28 @@ const ImprovedCustomizationPanel: React.FC = () => {
                 <EffectCard
                   name="Neumorphism"
                   description="Soft 3D effect"
-                  active={selectedComponent.properties?.effect === 'neumorphism'}
-                  onClick={() => {
-                    updateComponentProperty('effect', 'neumorphism')
-                    updateComponentStyle({
-                      boxShadow: '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
-                      border: 'none'
-                    })
-                  }}
+                  effectId="neumorphism"
                   preview={<div className="w-8 h-6 bg-surface-100 rounded" style={{ boxShadow: '2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff' }} />}
                 />
 
                 <EffectCard
                   name="Glass"
                   description="Transparent blur"
-                  active={selectedComponent.properties?.effect === 'glass'}
-                  onClick={() => {
-                    updateComponentProperty('effect', 'glass')
-                    updateComponentStyle({
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)'
-                    })
-                  }}
+                  effectId="glass"
                   preview={<div className="w-8 h-6 bg-white/20 rounded border border-white/30" style={{ backdropFilter: 'blur(2px)' }} />}
                 />
 
                 <EffectCard
                   name="Claymorphism"
                   description="Clay-like texture"
-                  active={selectedComponent.properties?.effect === 'clay'}
-                  onClick={() => {
-                    updateComponentProperty('effect', 'clay')
-                    updateComponentStyle({
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(4px)',
-                      border: '2px solid rgba(255, 255, 255, 0.18)'
-                    })
-                  }}
+                  effectId="clay"
                   preview={<div className="w-8 h-6 bg-white/25 rounded-lg border-2 border-white/20" />}
                 />
 
                 <EffectCard
                   name="Glow"
                   description="Soft light emission"
-                  active={selectedComponent.properties?.effect === 'glow'}
-                  onClick={() => {
-                    updateComponentProperty('effect', 'glow')
-                    updateComponentStyle({
-                      boxShadow: '0 0 20px rgba(59, 130, 246, 0.5)',
-                      border: '1px solid rgba(59, 130, 246, 0.3)'
-                    })
-                  }}
+                  effectId="glow"
                   preview={<div className="w-8 h-6 bg-blue-100 rounded" style={{ boxShadow: '0 0 8px rgba(59, 130, 246, 0.5)' }} />}
                 />
               </div>
@@ -428,8 +536,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
               
               <ColorControl
                 label="Background Color"
-                value={selectedComponent.style?.backgroundColor || '#ffffff'}
-                onChange={(value) => updateComponentStyle({ backgroundColor: value })}
+                property="backgroundColor"
               />
 
               <div className="space-y-2">
@@ -445,7 +552,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
                   ].map(preset => (
                     <button
                       key={preset.name}
-                      onClick={() => updateComponentStyle({ background: preset.gradient })}
+                      onClick={() => updateStyle({ background: preset.gradient })}
                       className="h-10 rounded-lg neumorphism-button text-xs font-medium overflow-hidden"
                       style={{ background: preset.gradient }}
                     >
@@ -454,15 +561,6 @@ const ImprovedCustomizationPanel: React.FC = () => {
                   ))}
                 </div>
               </div>
-
-              <SliderControl
-                label="Opacity"
-                value={Math.round((selectedComponent.style?.opacity || 1) * 100)}
-                onChange={(value) => updateComponentStyle({ opacity: value / 100 })}
-                min={0}
-                max={100}
-                unit="%"
-              />
             </div>
           </div>
         )}
@@ -483,32 +581,42 @@ const ImprovedCustomizationPanel: React.FC = () => {
                   { id: 'scale', name: 'Scale In', description: 'Scale from center' },
                   { id: 'rotate', name: 'Rotate In', description: 'Spin entrance' },
                   { id: 'flip', name: 'Flip In', description: '3D flip effect' }
-                ].map(animation => (
-                  <EffectCard
-                    key={animation.id}
-                    name={animation.name}
-                    description={animation.description}
-                    active={selectedComponent.animations?.includes(animation.id)}
-                    onClick={() => {
-                      // Toggle animation
-                      const currentAnimations = selectedComponent.animations || []
-                      if (currentAnimations.includes(animation.id)) {
-                        updateComponentProperty('animations', currentAnimations.filter(id => id !== animation.id))
-                      } else {
-                        updateComponentProperty('animations', [...currentAnimations, animation.id])
-                      }
-                    }}
-                    preview={
-                      <div className={`w-6 h-4 bg-primary-400 rounded ${
-                        animation.id === 'bounce' ? 'animate-bounce' :
-                        animation.id === 'fade' ? 'animate-pulse' :
-                        animation.id === 'slide' ? 'animate-pulse' :
-                        animation.id === 'scale' ? 'animate-ping' :
-                        'animate-spin'
-                      }`} />
-                    }
-                  />
-                ))}
+                ].map(animation => {
+                  const isActive = selectedComponent.animations?.includes(animation.id)
+                  
+                  return (
+                    <button
+                      key={animation.id}
+                      onClick={() => {
+                        const currentAnimations = selectedComponent.animations || []
+                        if (isActive) {
+                          updateProperty('animations', currentAnimations.filter(id => id !== animation.id))
+                        } else {
+                          updateProperty('animations', [...currentAnimations, animation.id])
+                        }
+                      }}
+                      className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
+                        isActive 
+                          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
+                          : 'neumorphism-card hover:scale-105'
+                      }`}
+                    >
+                      <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
+                        <div className={`w-6 h-4 bg-primary-400 rounded ${
+                          animation.id === 'bounce' ? 'animate-bounce' :
+                          animation.id === 'fade' ? 'animate-pulse' :
+                          animation.id === 'slide' ? 'animate-pulse' :
+                          animation.id === 'scale' ? 'animate-ping' :
+                          'animate-spin'
+                        }`} />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm">{animation.name}</h4>
+                        <p className="text-xs text-secondary-500 mt-1">{animation.description}</p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -520,22 +628,19 @@ const ImprovedCustomizationPanel: React.FC = () => {
               <div className="space-y-3">
                 <ToggleControl
                   label="Pulse Effect"
-                  value={selectedComponent.properties?.pulse || false}
-                  onChange={(value) => updateComponentProperty('pulse', value)}
+                  property="pulse"
                   description="Gentle pulsing animation"
                 />
 
                 <ToggleControl
                   label="Float Effect"
-                  value={selectedComponent.properties?.float || false}
-                  onChange={(value) => updateComponentProperty('float', value)}
+                  property="float"
                   description="Gentle up and down motion"
                 />
 
                 <ToggleControl
                   label="Glow Pulse"
-                  value={selectedComponent.properties?.glowPulse || false}
-                  onChange={(value) => updateComponentProperty('glowPulse', value)}
+                  property="glowPulse"
                   description="Pulsing glow effect"
                 />
               </div>
@@ -559,23 +664,36 @@ const ImprovedCustomizationPanel: React.FC = () => {
                   { id: 'glow', name: 'Glow', description: 'Glowing border' },
                   { id: 'shake', name: 'Shake', description: 'Gentle shake' },
                   { id: 'bounce', name: 'Bounce', description: 'Bouncy effect' }
-                ].map(effect => (
-                  <EffectCard
-                    key={effect.id}
-                    name={effect.name}
-                    description={effect.description}
-                    active={selectedComponent.hoverEffects?.includes(effect.id)}
-                    onClick={() => {
-                      const currentEffects = selectedComponent.hoverEffects || []
-                      if (currentEffects.includes(effect.id)) {
-                        updateComponentProperty('hoverEffects', currentEffects.filter(id => id !== effect.id))
-                      } else {
-                        updateComponentProperty('hoverEffects', [...currentEffects, effect.id])
-                      }
-                    }}
-                    preview={<div className="w-6 h-4 bg-accent-400 rounded hover:scale-110 transition-transform" />}
-                  />
-                ))}
+                ].map(effect => {
+                  const isActive = selectedComponent.hoverEffects?.includes(effect.id)
+                  
+                  return (
+                    <button
+                      key={effect.id}
+                      onClick={() => {
+                        const currentEffects = selectedComponent.hoverEffects || []
+                        if (isActive) {
+                          updateProperty('hoverEffects', currentEffects.filter(id => id !== effect.id))
+                        } else {
+                          updateProperty('hoverEffects', [...currentEffects, effect.id])
+                        }
+                      }}
+                      className={`p-4 rounded-xl text-left transition-all duration-200 space-y-3 ${
+                        isActive 
+                          ? 'neumorphism-pressed bg-primary-50 text-primary-700 scale-95' 
+                          : 'neumorphism-card hover:scale-105'
+                      }`}
+                    >
+                      <div className="h-12 flex items-center justify-center rounded-lg bg-surface-100 overflow-hidden">
+                        <div className="w-6 h-4 bg-accent-400 rounded hover:scale-110 transition-transform" />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-sm">{effect.name}</h4>
+                        <p className="text-xs text-secondary-500 mt-1">{effect.description}</p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
@@ -584,21 +702,75 @@ const ImprovedCustomizationPanel: React.FC = () => {
                 🎨 <span className="ml-2">Hover Colors</span>
               </h3>
 
-              <ColorControl
-                label="Hover Background"
-                value={selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff'}
-                onChange={(value) => updateComponentStyle({ 
-                  hover: { ...selectedComponent.style?.hover, backgroundColor: value }
-                })}
-              />
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-secondary-700">Hover Background</label>
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff'}
+                        onChange={(e) => updateStyle({ 
+                          hover: { 
+                            ...selectedComponent.style?.hover, 
+                            backgroundColor: e.target.value 
+                          }
+                        })}
+                        className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
+                      />
+                      <div 
+                        className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
+                        style={{ backgroundColor: selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff' }}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={selectedComponent.style?.hover?.backgroundColor || selectedComponent.style?.backgroundColor || '#ffffff'}
+                      onChange={(e) => updateStyle({ 
+                        hover: { 
+                          ...selectedComponent.style?.hover, 
+                          backgroundColor: e.target.value 
+                        }
+                      })}
+                      className="flex-1 px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
+                    />
+                  </div>
+                </div>
 
-              <ColorControl
-                label="Hover Text Color"
-                value={selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151'}
-                onChange={(value) => updateComponentStyle({ 
-                  hover: { ...selectedComponent.style?.hover, color: value }
-                })}
-              />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-secondary-700">Hover Text Color</label>
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <input
+                        type="color"
+                        value={selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151'}
+                        onChange={(e) => updateStyle({ 
+                          hover: { 
+                            ...selectedComponent.style?.hover, 
+                            color: e.target.value 
+                          }
+                        })}
+                        className="w-12 h-12 rounded-xl cursor-pointer opacity-0 absolute inset-0"
+                      />
+                      <div 
+                        className="w-12 h-12 rounded-xl shadow-neumorphism-inset border-2 border-surface-300 cursor-pointer"
+                        style={{ backgroundColor: selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151' }}
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={selectedComponent.style?.hover?.color || selectedComponent.style?.color || '#374151'}
+                      onChange={(e) => updateStyle({ 
+                        hover: { 
+                          ...selectedComponent.style?.hover, 
+                          color: e.target.value 
+                        }
+                      })}
+                      className="flex-1 px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -613,25 +785,19 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
               <TextInputControl
                 label="Custom Icon URL"
-                value={selectedComponent.properties?.iconUrl || ''}
-                onChange={(value) => updateComponentProperty('iconUrl', value)}
+                property="iconUrl"
                 placeholder="https://example.com/icon.svg"
               />
 
               <TextInputControl
                 label="Background Image URL"
-                value={selectedComponent.properties?.backgroundImage || ''}
-                onChange={(value) => {
-                  updateComponentProperty('backgroundImage', value)
-                  updateComponentStyle({ backgroundImage: value ? `url(${value})` : 'none' })
-                }}
+                property="backgroundImage"
                 placeholder="https://example.com/image.jpg"
               />
 
               <SelectControl
                 label="Background Size"
-                value={selectedComponent.style?.backgroundSize || 'cover'}
-                onChange={(value) => updateComponentStyle({ backgroundSize: value })}
+                property="backgroundSize"
                 options={['cover', 'contain', 'auto', '100% 100%']}
               />
             </div>
@@ -643,8 +809,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
               <TextInputControl
                 label="Custom CSS Class"
-                value={selectedComponent.properties?.customClass || ''}
-                onChange={(value) => updateComponentProperty('customClass', value)}
+                property="customClass"
                 placeholder="my-custom-class"
               />
 
@@ -652,7 +817,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
                 <label className="text-sm font-medium text-secondary-700">Custom CSS</label>
                 <textarea
                   value={selectedComponent.properties?.customCSS || ''}
-                  onChange={(e) => updateComponentProperty('customCSS', e.target.value)}
+                  onChange={(e) => updateProperty('customCSS', e.target.value)}
                   placeholder="/* Custom CSS rules */"
                   className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg bg-surface-100 font-mono resize-none"
                   rows={6}
@@ -661,8 +826,7 @@ const ImprovedCustomizationPanel: React.FC = () => {
 
               <ToggleControl
                 label="Responsive Design"
-                value={selectedComponent.properties?.responsive || true}
-                onChange={(value) => updateComponentProperty('responsive', value)}
+                property="responsive"
                 description="Auto-adapt to screen sizes"
               />
             </div>

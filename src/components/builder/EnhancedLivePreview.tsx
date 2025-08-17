@@ -116,51 +116,68 @@ const EnhancedLivePreview: React.FC = () => {
     switch (type) {
       // Basic Components
       case 'button':
-        const buttonText = properties?.text || 'Button'
+        const buttonText = properties?.text || selectedComponent.name || 'Button'
         return (
           <button 
             className={combinedClasses}
-            style={enhancedStyle}
+            style={{
+              ...enhancedStyle,
+              minHeight: enhancedStyle.height || 'auto',
+              minWidth: enhancedStyle.width || 'auto',
+              cursor: 'pointer'
+            }}
           >
             {buttonText}
           </button>
         )
 
       case 'card':
-        const cardTitle = properties?.title || 'Card Title'
+        const cardTitle = properties?.title || properties?.text || selectedComponent.name || 'Card Title'
         const cardDescription = properties?.description || 'This is a sample card description that shows how your card will look.'
-        const cardImage = properties?.image
+        const cardImage = properties?.image || properties?.backgroundImage
 
         return (
           <div 
             className={`${combinedClasses} overflow-hidden`}
             style={{
               ...enhancedStyle,
-              width: properties?.maxWidth || '320px',
-              minHeight: '200px'
+              width: enhancedStyle.width || '320px',
+              height: enhancedStyle.height || 'auto',
+              minHeight: enhancedStyle.height ? enhancedStyle.height : '200px',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
             {cardImage && (
               <img 
                 src={cardImage} 
                 alt="Card" 
-                className="w-full h-32 object-cover"
+                className="w-full h-32 object-cover flex-shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).style.display = 'none'
                 }}
               />
             )}
-            <div style={{ padding: properties?.padding || '24px' }}>
+            <div style={{ 
+              padding: enhancedStyle.padding || '24px',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center'
+            }}>
               <h3 className="font-semibold mb-2" style={{ 
-                color: enhancedStyle.color,
-                fontSize: '18px'
+                color: enhancedStyle.color || '#374151',
+                fontSize: enhancedStyle.fontSize || '18px',
+                fontWeight: enhancedStyle.fontWeight || '600',
+                fontFamily: enhancedStyle.fontFamily || 'inherit'
               }}>
                 {cardTitle}
               </h3>
               <p style={{ 
                 color: enhancedStyle.color || '#6b7280',
-                fontSize: '14px',
-                opacity: 0.8
+                fontSize: `${parseInt(enhancedStyle.fontSize?.toString() || '14') * 0.85}px`,
+                opacity: 0.8,
+                fontFamily: enhancedStyle.fontFamily || 'inherit'
               }}>
                 {cardDescription}
               </p>
@@ -169,88 +186,119 @@ const EnhancedLivePreview: React.FC = () => {
         )
 
       case 'input':
-        const inputPlaceholder = properties?.placeholder || 'Enter text...'
+        const inputPlaceholder = properties?.placeholder || properties?.text || 'Enter text...'
         const inputLabel = properties?.label
         
         return (
           <div className="space-y-2">
             {inputLabel && (
-              <label className="block text-sm font-medium" style={{ color: enhancedStyle.color }}>
+              <label className="block text-sm font-medium" style={{ 
+                color: enhancedStyle.color,
+                fontSize: enhancedStyle.fontSize,
+                fontFamily: enhancedStyle.fontFamily
+              }}>
                 {inputLabel}
               </label>
             )}
             <input
               type={properties?.type || 'text'}
               placeholder={inputPlaceholder}
+              value={properties?.text || ''}
+              readOnly
               className={combinedClasses}
               style={{
                 ...enhancedStyle,
-                width: properties?.fullWidth ? '300px' : '200px'
+                width: enhancedStyle.width || (properties?.fullWidth ? '300px' : '200px'),
+                height: enhancedStyle.height || 'auto',
+                fontSize: enhancedStyle.fontSize || '14px',
+                fontFamily: enhancedStyle.fontFamily || 'inherit',
+                fontWeight: enhancedStyle.fontWeight || '400'
               }}
             />
           </div>
         )
 
       case 'badge':
+        const badgeText = properties?.text || selectedComponent.name || 'Badge'
         return (
           <span 
             className={combinedClasses}
             style={{
               ...enhancedStyle,
               display: 'inline-block',
-              padding: '4px 12px',
-              fontSize: '12px',
-              fontWeight: '500',
-              borderRadius: '12px',
+              padding: enhancedStyle.padding || '4px 12px',
+              fontSize: enhancedStyle.fontSize || '12px',
+              fontWeight: enhancedStyle.fontWeight || '500',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
+              borderRadius: enhancedStyle.borderRadius || '12px',
               backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
-              color: enhancedStyle.color || '#ffffff'
+              color: enhancedStyle.color || '#ffffff',
+              width: enhancedStyle.width || 'auto',
+              height: enhancedStyle.height || 'auto',
+              textAlign: 'center' as const,
+              lineHeight: enhancedStyle.height ? `${parseInt(enhancedStyle.height.toString().replace('px', '')) - 8}px` : 'normal'
             }}
           >
-            {properties?.text || 'Badge'}
+            {badgeText}
           </span>
         )
 
       case 'avatar':
+        const avatarText = properties?.text || properties?.initials || selectedComponent.name?.charAt(0) || '👤'
+        const size = Math.min(
+          parseInt(enhancedStyle.width?.toString().replace('px', '') || '64'),
+          parseInt(enhancedStyle.height?.toString().replace('px', '') || '64')
+        )
+        
         return (
           <div 
             className={combinedClasses}
             style={{
               ...enhancedStyle,
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
+              width: enhancedStyle.width || `${size}px`,
+              height: enhancedStyle.height || `${size}px`,
+              borderRadius: enhancedStyle.borderRadius === '50%' || !enhancedStyle.borderRadius ? '50%' : enhancedStyle.borderRadius,
               backgroundColor: enhancedStyle.backgroundColor || '#e5e7eb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '24px',
+              fontSize: enhancedStyle.fontSize || `${size * 0.4}px`,
+              fontWeight: enhancedStyle.fontWeight || '500',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
               color: enhancedStyle.color || '#6b7280'
             }}
           >
-            {properties?.initials || '👤'}
+            {avatarText}
           </div>
         )
 
       case 'alert':
+        const alertText = properties?.text || properties?.message || 'This is an alert message'
         return (
           <div 
             className={combinedClasses}
             style={{
               ...enhancedStyle,
-              padding: '16px',
-              borderRadius: '8px',
+              padding: enhancedStyle.padding || '16px',
+              borderRadius: enhancedStyle.borderRadius || '8px',
               backgroundColor: enhancedStyle.backgroundColor || '#fef3c7',
-              border: '1px solid #fbbf24',
+              border: enhancedStyle.border || '1px solid #fbbf24',
               color: enhancedStyle.color || '#92400e',
+              fontSize: enhancedStyle.fontSize || '14px',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
+              fontWeight: enhancedStyle.fontWeight || '400',
               display: 'flex',
               alignItems: 'center',
-              maxWidth: '400px'
+              width: enhancedStyle.width || 'auto',
+              maxWidth: enhancedStyle.width || '400px',
+              height: enhancedStyle.height || 'auto',
+              minHeight: enhancedStyle.height || 'auto'
             }}
           >
-            <svg className="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+            <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
-            {properties?.message || 'This is an alert message'}
+            <span>{alertText}</span>
           </div>
         )
 

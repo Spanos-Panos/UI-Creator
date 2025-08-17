@@ -70,11 +70,19 @@ export const useComponentStore = create<ComponentStore>((set, get) => ({
   updateComponentStyle: (updates) => {
     const { selectedComponent } = get()
     if (selectedComponent) {
+      // Handle special conversions
+      const processedUpdates = { ...updates }
+      
+      // Convert opacity percentage to decimal
+      if (processedUpdates.opacity !== undefined && processedUpdates.opacity > 1) {
+        processedUpdates.opacity = processedUpdates.opacity / 100
+      }
+      
       const updatedComponent = {
         ...selectedComponent,
         style: {
           ...selectedComponent.style,
-          ...updates
+          ...processedUpdates
         }
       }
       set({ selectedComponent: updatedComponent })
