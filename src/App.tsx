@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import ComponentSelectorModal from './components/builder/ComponentSelectorModal'
 import EnhancedLivePreview from './components/builder/EnhancedLivePreview'
-import AdvancedCustomizationPanel from './components/builder/AdvancedCustomizationPanel'
+import ImprovedCustomizationPanel from './components/builder/ImprovedCustomizationPanel'
 import ExportModal from './components/builder/ExportModal'
 import { useComponentStore } from './stores/componentStore'
 
@@ -90,9 +90,9 @@ function App() {
       
       {/* Main Content Area */}
       <div className="flex-1 flex min-h-0">
-        {/* Left: Advanced Customization Panel */}
-        <div className="w-80 border-r border-surface-200/50 bg-gradient-to-br from-surface-50 to-surface-100">
-          <AdvancedCustomizationPanel />
+        {/* Left: Improved Customization Panel */}
+        <div className="w-96 border-r border-surface-200/50 bg-gradient-to-br from-surface-50 to-surface-100">
+          <ImprovedCustomizationPanel />
         </div>
         
         {/* Right: Enhanced Live Preview */}

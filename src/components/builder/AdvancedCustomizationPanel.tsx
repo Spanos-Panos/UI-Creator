@@ -209,6 +209,24 @@ const AdvancedCustomizationPanel: React.FC = () => {
           </div>
         )
         
+      case 'gradient':
+        return (
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={value}
+              onChange={(e) => handlePropertyChange(e.target.value)}
+              placeholder="linear-gradient(135deg, #667eea, #764ba2)"
+              className="w-full px-3 py-2 text-sm neumorphism-inset rounded-lg border-0 bg-surface-100"
+            />
+            <div className="flex space-x-2 text-xs text-secondary-500">
+              <button onClick={() => handlePropertyChange('linear-gradient(135deg, #667eea 0%, #764ba2 100%)')} className="neumorphism-button px-2 py-1 rounded">Purple</button>
+              <button onClick={() => handlePropertyChange('linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)')} className="neumorphism-button px-2 py-1 rounded">Sunset</button>
+              <button onClick={() => handlePropertyChange('linear-gradient(135deg, #11998e 0%, #38ef7d 100%)')} className="neumorphism-button px-2 py-1 rounded">Forest</button>
+            </div>
+          </div>
+        )
+
       default:
         return (
           <input
@@ -232,24 +250,23 @@ const AdvancedCustomizationPanel: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-gradient-to-br from-surface-50 to-surface-100">
       {/* Header */}
-      <div className="p-6 border-b border-surface-200/50">
-        <div className="flex items-center space-x-3 mb-4">
+      <div className="p-4 border-b border-surface-200/50">
+        <div className="flex items-center space-x-3 mb-3">
           <div className="w-8 h-8 neumorphism rounded-lg flex items-center justify-center">
             <span className="text-lg">{config.icon || '⚙️'}</span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-secondary-800">{selectedComponent.name}</h2>
-            <p className="text-sm text-secondary-500">{config.description}</p>
+            <h2 className="text-base font-semibold text-secondary-800">{selectedComponent.name}</h2>
+            <p className="text-xs text-secondary-500">{config.description}</p>
           </div>
         </div>
-        
         {/* Tabs */}
-        <div className="flex space-x-1">
+        <div className="grid grid-cols-5 gap-1">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 ${
+              className={`px-2 py-1.5 text-[11px] font-medium rounded-lg transition-all duration-200 ${
                 activeTab === tab.id
                   ? 'neumorphism-pressed scale-95 text-primary-600'
                   : 'neumorphism-button text-secondary-600 hover:text-secondary-700'
@@ -263,22 +280,22 @@ const AdvancedCustomizationPanel: React.FC = () => {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto space-y-6">
         {activeTab === 'properties' && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {['content', 'layout', 'behavior'].map(category => {
               const categoryProps = getPropertiesByCategory(category)
               if (categoryProps.length === 0) return null
               
               return (
-                <div key={category} className="space-y-4">
-                  <h3 className="text-sm font-semibold text-secondary-700 uppercase tracking-wide">
+                <div key={category} className="space-y-3">
+                  <h3 className="text-xs font-semibold text-secondary-700 uppercase tracking-wide">
                     {category}
                   </h3>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {categoryProps.map(property => (
-                      <div key={property.id} className="space-y-2">
-                        <label className="block text-sm font-medium text-secondary-600">
+                      <div key={property.id} className="space-y-1.5">
+                        <label className="block text-xs font-medium text-secondary-600">
                           {property.label}
                         </label>
                         {renderPropertyControl(property)}
@@ -292,10 +309,10 @@ const AdvancedCustomizationPanel: React.FC = () => {
         )}
 
         {activeTab === 'styling' && (
-          <div className="space-y-6">
+          <div className="space-y-3">
             {getPropertiesByCategory('styling').map(property => (
-              <div key={property.id} className="space-y-2">
-                <label className="block text-sm font-medium text-secondary-600">
+              <div key={property.id} className="space-y-1.5">
+                <label className="block text-xs font-medium text-secondary-600">
                   {property.label}
                 </label>
                 {renderPropertyControl(property)}

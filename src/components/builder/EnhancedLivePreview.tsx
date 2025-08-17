@@ -55,34 +55,48 @@ const EnhancedLivePreview: React.FC = () => {
     const properties = component.properties
     const enhancedStyle: React.CSSProperties = { ...baseStyle }
 
-    // Apply glass morphism effect
-    if (properties.glassEffect) {
-      enhancedStyle.background = 'rgba(255, 255, 255, 0.1)'
-      enhancedStyle.backdropFilter = 'blur(10px)'
-      enhancedStyle.border = '1px solid rgba(255, 255, 255, 0.2)'
+    // Apply effect presets
+    if (properties.effect) {
+      switch (properties.effect) {
+        case 'neumorphism':
+          enhancedStyle.boxShadow = '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff'
+          enhancedStyle.border = 'none'
+          break
+        case 'glass':
+          enhancedStyle.background = 'rgba(255, 255, 255, 0.1)'
+          enhancedStyle.backdropFilter = 'blur(10px)'
+          enhancedStyle.border = '1px solid rgba(255, 255, 255, 0.2)'
+          break
+        case 'clay':
+          enhancedStyle.background = 'rgba(255, 255, 255, 0.25)'
+          enhancedStyle.backdropFilter = 'blur(4px)'
+          enhancedStyle.border = '2px solid rgba(255, 255, 255, 0.18)'
+          break
+        case 'glow':
+          enhancedStyle.boxShadow = '0 0 20px rgba(59, 130, 246, 0.5)'
+          enhancedStyle.border = '1px solid rgba(59, 130, 246, 0.3)'
+          break
+      }
     }
 
-    // Apply gradient backgrounds
-    if (properties.backgroundGradient && properties.backgroundGradient !== '') {
-      enhancedStyle.background = properties.backgroundGradient
+    // Apply custom background image
+    if (properties.backgroundImage && properties.backgroundImage !== '') {
+      enhancedStyle.backgroundImage = `url(${properties.backgroundImage})`
+      enhancedStyle.backgroundSize = enhancedStyle.backgroundSize || 'cover'
+      enhancedStyle.backgroundPosition = 'center'
     }
 
-    // Apply advanced shadows
-    if (properties.elevation && typeof properties.elevation === 'number') {
-      const shadows = [
-        'none',
-        '0 2px 15px rgba(0, 0, 0, 0.08)',
-        '0 8px 30px rgba(0, 0, 0, 0.12)',
-        '0 20px 40px rgba(0, 0, 0, 0.15)',
-        '0 25px 50px rgba(0, 0, 0, 0.18)',
-        '0 30px 60px rgba(0, 0, 0, 0.22)'
-      ]
-      enhancedStyle.boxShadow = shadows[properties.elevation] || shadows[1]
+    // Apply continuous animations
+    if (properties.pulse) {
+      enhancedStyle.animation = `${enhancedStyle.animation || ''} pulse 2s infinite`.trim()
+    }
+    
+    if (properties.float) {
+      enhancedStyle.animation = `${enhancedStyle.animation || ''} float 3s infinite ease-in-out`.trim()
     }
 
-    // Apply glow effects
-    if (properties.glowEffect) {
-      enhancedStyle.boxShadow = `${enhancedStyle.boxShadow || ''}, 0 0 20px rgba(59, 130, 246, 0.3)`.replace(/^, /, '')
+    if (properties.glowPulse) {
+      enhancedStyle.animation = `${enhancedStyle.animation || ''} glowPulse 2s infinite`.trim()
     }
 
     return enhancedStyle

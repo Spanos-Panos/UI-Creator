@@ -60,6 +60,10 @@ export const useComponentStore = create<ComponentStore>((set, get) => ({
   components: [],
   
   setSelectedComponent: (component) => {
+    // Ensure fallback config for components without advanced config
+    if (component && !component.properties) {
+      component.properties = {}
+    }
     set({ selectedComponent: component })
   },
   
@@ -205,7 +209,19 @@ export const useComponentStore = create<ComponentStore>((set, get) => ({
   
   createComponentFromType: (type, id) => {
     const config = getComponentConfig(type)
-    if (!config) return null
+    if (!config) {
+      // Fallback for components without config
+      const componentId = id || `${type}_${Date.now()}`
+      return {
+        id: componentId,
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        type,
+        style: { ...defaultStyle },
+        properties: {},
+        animations: [],
+        hoverEffects: []
+      }
+    }
     
     const componentId = id || `${type}_${Date.now()}`
     const defaultProperties: Record<string, any> = {}
