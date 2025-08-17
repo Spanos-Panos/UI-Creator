@@ -112,60 +112,16 @@
   }
 }
 
-/* ===== ENHANCED RANGE SLIDER STYLING ===== */
-.slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.slider-thumb::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #ffffff, #e2e8f0);
-  box-shadow: 3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.slider-thumb::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-  box-shadow: 4px 4px 8px #d1d9e6, -4px -4px 8px #ffffff;
-}
-
-.slider-thumb::-webkit-slider-thumb:active {
-  transform: scale(1.1);
-  box-shadow: 2px 2px 4px #d1d9e6, -2px -2px 4px #ffffff;
-}
-
-.slider-thumb::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #ffffff, #e2e8f0);
-  box-shadow: 3px 3px 6px #d1d9e6, -3px -3px 6px #ffffff;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
-}
-
-.slider-thumb::-moz-range-thumb:hover {
-  transform: scale(1.2);
-}
-
 /* ===== HOVER EFFECTS ===== */
 
-/* Enhanced Lift Effect */
+/* Lift Effect */
 .hover-lift {
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .hover-lift:hover {
-  transform: translateY(-12px) perspective(1000px) rotateX(10deg);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15), 0 10px 30px rgba(0, 0, 0, 0.1);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
 .hover-lift-card {
@@ -175,93 +131,6 @@
 .hover-lift-card:hover {
   transform: translateY(-12px) rotate(1deg);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-}
-
-/* Enhanced Scale Effect */
-.hover-scale {
-  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.hover-scale:hover {
-  transform: scale(1.08);
-}
-
-/* Enhanced Rotate Effect */
-.hover-rotate {
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-
-.hover-rotate:hover {
-  transform: rotate(5deg) scale(1.05);
-}
-
-/* Enhanced Glow Effect */
-.hover-glow {
-  transition: all 0.4s ease;
-}
-
-.hover-glow:hover {
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 0 60px rgba(59, 130, 246, 0.4);
-  filter: brightness(1.1);
-}
-
-/* Shake Effect */
-.hover-shake:hover {
-  animation: shake 0.6s ease-in-out;
-}
-
-/* Bounce Effect */
-.hover-bounce:hover {
-  animation: bounceHover 0.6s ease-in-out;
-}
-
-@keyframes bounceHover {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-}
-
-/* Enhanced Entry Animations */
-@keyframes rotateIn {
-  0% {
-    opacity: 0;
-    transform: rotate(-180deg) scale(0.5);
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(0deg) scale(1);
-  }
-}
-
-@keyframes flipIn {
-  0% {
-    opacity: 0;
-    transform: perspective(400px) rotateX(-90deg);
-  }
-  40% {
-    transform: perspective(400px) rotateX(-10deg);
-  }
-  70% {
-    transform: perspective(400px) rotateX(10deg);
-  }
-  100% {
-    opacity: 1;
-    transform: perspective(400px) rotateX(0deg);
-  }
-}
-
-.animate-rotate-in {
-  animation: rotateIn 0.8s ease-out;
-}
-
-.animate-flip-in {
-  animation: flipIn 0.8s ease-out;
 }
 
 /* Scale Effects */
@@ -402,6 +271,17 @@
 
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
+}
+
+/* Basic flip-in using rotate with perspective */
+.animate-flip-in {
+  transform-style: preserve-3d;
+  animation: flipIn 0.6s ease-out;
+}
+
+@keyframes flipIn {
+  0% { transform: perspective(800px) rotateY(-90deg); opacity: 0; }
+  100% { transform: perspective(800px) rotateY(0deg); opacity: 1; }
 }
 
 .animate-focus-ripple:focus {

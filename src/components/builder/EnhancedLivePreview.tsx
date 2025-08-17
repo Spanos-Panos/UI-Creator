@@ -12,17 +12,13 @@ const EnhancedLivePreview: React.FC = () => {
   function getAnimationClasses(component: any): string {
     if (!component?.animations?.length) return ''
     return component.animations.map((animId: string) => {
-      // Map animation IDs to CSS classes
       const animationMap: Record<string, string> = {
-        'bounce': 'animate-bounce-in',
-        'pulse': 'animate-pulse-continuous',
-        'shake': 'animate-shake-hover',
-        'glow': 'animate-glow-pulse',
-        'fadeInUp': 'animate-fade-in-up',
-        'scaleIn': 'animate-scale-in',
-        'slideInLeft': 'animate-slide-in-left',
-        'slideIn': 'animate-slide-in',
-        'focusRipple': 'animate-focus-ripple'
+        bounce: 'animate-bounce-in',
+        fade: 'animate-fade-in-up',
+        slide: 'animate-slide-in-left',
+        scale: 'animate-scale-in',
+        rotate: 'animate-spin',
+        flip: 'animate-flip-in' // custom class we'll emulate with rotate
       }
       return animationMap[animId] || ''
     }).filter(Boolean).join(' ')
@@ -33,17 +29,17 @@ const EnhancedLivePreview: React.FC = () => {
     return component.hoverEffects.map((effectId: string) => {
       // Map effect IDs to CSS classes
       const effectMap: Record<string, string> = {
-        'lift': 'hover-lift',
-        'liftCard': 'hover-lift-card',
-        'scale': 'hover-scale',
-        'scaleSubtle': 'hover-scale-subtle',
-        'rotate': 'hover-rotate',
-        'glow': 'hover-glow',
-        'borderGlow': 'hover-border-glow',
-        'neon': 'hover-neon',
-        'tilt': 'hover-tilt',
-        'parallax': 'hover-parallax',
-        'ripple': 'hover-ripple'
+        lift: 'hover-lift',
+        liftCard: 'hover-lift-card',
+        scale: 'hover-scale',
+        scaleSubtle: 'hover-scale-subtle',
+        rotate: 'hover-rotate',
+        glow: 'hover-glow',
+        borderGlow: 'hover-border-glow',
+        neon: 'hover-neon',
+        tilt: 'hover-tilt',
+        parallax: 'hover-parallax',
+        ripple: 'hover-ripple'
       }
       return effectMap[effectId] || ''
     }).filter(Boolean).join(' ')
@@ -112,61 +108,6 @@ const EnhancedLivePreview: React.FC = () => {
 
     // Apply advanced effects to the base style
     const enhancedStyle = applyEffectsToStyle(selectedComponent, style || {})
-    
-    // Build CSS classes for animations and hover effects
-    let cssClasses = combinedClasses
-    
-    // Add hover effect classes
-    if (hoverEffects && hoverEffects.length > 0) {
-      hoverEffects.forEach(effectId => {
-        switch (effectId) {
-          case 'lift':
-            cssClasses += ' hover-lift'
-            break
-          case 'scale':
-            cssClasses += ' hover-scale'
-            break
-          case 'rotate':
-            cssClasses += ' hover-rotate'
-            break
-          case 'glow':
-            cssClasses += ' hover-glow'
-            break
-          case 'shake':
-            cssClasses += ' hover-shake'
-            break
-          case 'bounce':
-            cssClasses += ' hover-bounce'
-            break
-        }
-      })
-    }
-    
-    // Add animation classes
-    if (animations && animations.length > 0) {
-      animations.forEach(animId => {
-        switch (animId) {
-          case 'bounce':
-            cssClasses += ' animate-bounce-in'
-            break
-          case 'fade':
-            cssClasses += ' animate-fade-in-up'
-            break
-          case 'slide':
-            cssClasses += ' animate-slide-in-left'
-            break
-          case 'scale':
-            cssClasses += ' animate-scale-in'
-            break
-          case 'rotate':
-            cssClasses += ' animate-rotate-in'
-            break
-          case 'flip':
-            cssClasses += ' animate-flip-in'
-            break
-        }
-      })
-    }
 
     switch (type) {
       // Basic Components
@@ -174,9 +115,11 @@ const EnhancedLivePreview: React.FC = () => {
         const buttonText = properties?.text || selectedComponent.name || 'Button'
         return (
           <button 
-            className={cssClasses.trim()}
+            className={combinedClasses}
             style={{
               ...enhancedStyle,
+              minHeight: enhancedStyle.height || 'auto',
+              minWidth: enhancedStyle.width || 'auto',
               cursor: 'pointer'
             }}
           >
@@ -191,10 +134,12 @@ const EnhancedLivePreview: React.FC = () => {
 
         return (
           <div 
-            className={cssClasses.trim()}
+            className={`${combinedClasses} overflow-hidden`}
             style={{
               ...enhancedStyle,
-              overflow: 'hidden',
+              width: enhancedStyle.width || '320px',
+              height: enhancedStyle.height || 'auto',
+              minHeight: enhancedStyle.height ? enhancedStyle.height : '200px',
               display: 'flex',
               flexDirection: 'column'
             }}
@@ -216,12 +161,11 @@ const EnhancedLivePreview: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center'
             }}>
-              <h3 style={{ 
+              <h3 className="font-semibold mb-2" style={{ 
                 color: enhancedStyle.color || '#374151',
                 fontSize: enhancedStyle.fontSize || '18px',
                 fontWeight: enhancedStyle.fontWeight || '600',
-                fontFamily: enhancedStyle.fontFamily || 'inherit',
-                margin: '0 0 8px 0'
+                fontFamily: enhancedStyle.fontFamily || 'inherit'
               }}>
                 {cardTitle}
               </h3>
@@ -229,9 +173,7 @@ const EnhancedLivePreview: React.FC = () => {
                 color: enhancedStyle.color || '#6b7280',
                 fontSize: `${parseInt(enhancedStyle.fontSize?.toString() || '14') * 0.85}px`,
                 opacity: 0.8,
-                fontFamily: enhancedStyle.fontFamily || 'inherit',
-                margin: 0,
-                lineHeight: 1.5
+                fontFamily: enhancedStyle.fontFamily || 'inherit'
               }}>
                 {cardDescription}
               </p>
@@ -259,10 +201,14 @@ const EnhancedLivePreview: React.FC = () => {
               placeholder={inputPlaceholder}
               value={properties?.text || ''}
               readOnly
-              className={cssClasses.trim()}
+              className={combinedClasses}
               style={{
                 ...enhancedStyle,
-                cursor: 'text'
+                width: enhancedStyle.width || (properties?.fullWidth ? '300px' : '200px'),
+                height: enhancedStyle.height || 'auto',
+                fontSize: enhancedStyle.fontSize || '14px',
+                fontFamily: enhancedStyle.fontFamily || 'inherit',
+                fontWeight: enhancedStyle.fontWeight || '400'
               }}
             />
           </div>
@@ -272,10 +218,19 @@ const EnhancedLivePreview: React.FC = () => {
         const badgeText = properties?.text || selectedComponent.name || 'Badge'
         return (
           <span 
-            className={cssClasses.trim()}
+            className={combinedClasses}
             style={{
               ...enhancedStyle,
               display: 'inline-block',
+              padding: enhancedStyle.padding || '4px 12px',
+              fontSize: enhancedStyle.fontSize || '12px',
+              fontWeight: enhancedStyle.fontWeight || '500',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
+              borderRadius: enhancedStyle.borderRadius || '12px',
+              backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
+              color: enhancedStyle.color || '#ffffff',
+              width: enhancedStyle.width || 'auto',
+              height: enhancedStyle.height || 'auto',
               textAlign: 'center' as const,
               lineHeight: enhancedStyle.height ? `${parseInt(enhancedStyle.height.toString().replace('px', '')) - 8}px` : 'normal'
             }}
@@ -293,14 +248,20 @@ const EnhancedLivePreview: React.FC = () => {
         
         return (
           <div 
-            className={cssClasses.trim()}
+            className={combinedClasses}
             style={{
               ...enhancedStyle,
+              width: enhancedStyle.width || `${size}px`,
+              height: enhancedStyle.height || `${size}px`,
               borderRadius: enhancedStyle.borderRadius === '50%' || !enhancedStyle.borderRadius ? '50%' : enhancedStyle.borderRadius,
+              backgroundColor: enhancedStyle.backgroundColor || '#e5e7eb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: enhancedStyle.fontSize || `${size * 0.4}px`
+              fontSize: enhancedStyle.fontSize || `${size * 0.4}px`,
+              fontWeight: enhancedStyle.fontWeight || '500',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
+              color: enhancedStyle.color || '#6b7280'
             }}
           >
             {avatarText}
@@ -311,12 +272,23 @@ const EnhancedLivePreview: React.FC = () => {
         const alertText = properties?.text || properties?.message || 'This is an alert message'
         return (
           <div 
-            className={cssClasses.trim()}
+            className={combinedClasses}
             style={{
               ...enhancedStyle,
+              padding: enhancedStyle.padding || '16px',
+              borderRadius: enhancedStyle.borderRadius || '8px',
+              backgroundColor: enhancedStyle.backgroundColor || '#fef3c7',
+              border: enhancedStyle.border || '1px solid #fbbf24',
+              color: enhancedStyle.color || '#92400e',
+              fontSize: enhancedStyle.fontSize || '14px',
+              fontFamily: enhancedStyle.fontFamily || 'inherit',
+              fontWeight: enhancedStyle.fontWeight || '400',
               display: 'flex',
               alignItems: 'center',
-              maxWidth: enhancedStyle.width || '400px'
+              width: enhancedStyle.width || 'auto',
+              maxWidth: enhancedStyle.width || '400px',
+              height: enhancedStyle.height || 'auto',
+              minHeight: enhancedStyle.height || 'auto'
             }}
           >
             <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -328,16 +300,15 @@ const EnhancedLivePreview: React.FC = () => {
 
       case 'progress':
         const progressValue = properties?.value || 65
-        const progressText = properties?.text || `${progressValue}% Complete`
         return (
-          <div className={cssClasses.trim()} style={{ ...enhancedStyle, minWidth: '200px' }}>
+          <div className={combinedClasses} style={{ width: '300px' }}>
             <div 
               style={{
-                height: enhancedStyle.height || '8px',
+                height: '8px',
                 backgroundColor: '#e5e7eb',
-                borderRadius: enhancedStyle.borderRadius || '4px',
+                borderRadius: '4px',
                 overflow: 'hidden',
-                marginBottom: '8px'
+                ...enhancedStyle
               }}
             >
               <div
@@ -346,17 +317,12 @@ const EnhancedLivePreview: React.FC = () => {
                   backgroundColor: enhancedStyle.backgroundColor || '#3b82f6',
                   width: `${progressValue}%`,
                   transition: 'width 0.3s ease',
-                  borderRadius: enhancedStyle.borderRadius || '4px'
+                  borderRadius: '4px'
                 }}
               />
             </div>
-            <div style={{ 
-              color: enhancedStyle.color || '#374151',
-              fontSize: enhancedStyle.fontSize || '14px',
-              fontFamily: enhancedStyle.fontFamily || 'inherit',
-              fontWeight: enhancedStyle.fontWeight || '400'
-            }}>
-              {progressText}
+            <div className="text-sm mt-2" style={{ color: enhancedStyle.color }}>
+              {progressValue}% Complete
             </div>
           </div>
         )
@@ -391,13 +357,19 @@ const EnhancedLivePreview: React.FC = () => {
 
       // Fallback for other components
       default:
-        const defaultText = properties?.text || selectedComponent.name || 'Component'
         return (
           <div 
-            className={cssClasses.trim()}
-            style={enhancedStyle}
+            className={combinedClasses}
+            style={{
+              ...enhancedStyle,
+              padding: '16px 24px',
+              borderRadius: '8px',
+              backgroundColor: enhancedStyle.backgroundColor || '#f3f4f6',
+              border: '1px solid #e5e7eb',
+              color: enhancedStyle.color || '#374151'
+            }}
           >
-            {defaultText}
+            {selectedComponent.name} Component
           </div>
         )
     }
